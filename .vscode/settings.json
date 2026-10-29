@@ -1,0 +1,14 @@
+{
+  "git.autofetch": false,
+  "git.autofetchPeriod": 0,
+  "git.enableSmartCommit": false,
+  "git.suggestSmartCommit": false,
+  "git.detectSubmodules": false,
+  "search.followSymlinks": false,
+  "files.watcherExclude": {
+    "**/data/**": true,
+    "**/runs/**": true,
+    "**/logs/**": true,
+    "**/data_check/**": true
+  }
+}

@@ -1,0 +1,50 @@
+# 데이터 (절대 커밋 금지 — 수 GB)
+data/
+*.tar.gz
+*.tgz
+waterbird_complete95_forest2water2/
+CUB_200_2011/
+segmentations/
+places*/
+
+# 체크포인트 (하나에 94MB — GitHub 경고선 50MB 초과)
+*.pt
+*.pth
+*.ckpt
+
+# 실행 산출물
+#   체크포인트는 빼되, 결과를 확인할 수 있는 작은 파일은 추적한다.
+#   (args.json 하이퍼파라미터 / log.csv 학습 곡선 / final_test.json 최종 수치)
+runs/**
+!runs/**/
+!runs/*/args.json
+!runs/*/log.csv
+!runs/*/final_test.json
+#   smoke test 산출물은 의미 없는 숫자라 제외
+runs/smoke/**
+
+# 데이터 점검 결과
+#   overlay 는 마스크 정렬을 눈으로 확인하는 자료라 추적한다.
+data_check/**
+!data_check/**/
+!data_check/*_overlay.jpg
+
+# SLURM 로그
+#   학습 로그는 재현 비교용으로 추적한다. 나머지는 제외.
+logs/**
+!logs/**/
+!logs/erm-*.out
+*.err
+nohup.out
+
+# 파이썬
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# 에디터
+.vscode/*
+!.vscode/settings.json
+.DS_Store

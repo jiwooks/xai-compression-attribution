@@ -1,0 +1,17 @@
+# torch / torchvision 은 클러스터의 CUDA 버전에 맞춰 따로 설치할 것.
+#   nvidia-smi 로 CUDA 버전 확인 후 https://pytorch.org/get-started/locally/ 참고
+#   예) CUDA 12.1  ->  pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# 아래는 공통 의존성.
+
+numpy>=1.24
+pandas>=2.0
+Pillow>=10.0
+scipy>=1.11          # Spearman 상관
+scikit-learn>=1.3    # AUROC
+matplotlib>=3.7      # 그래프
+tqdm>=4.65
+
+# STEP 4 (attribution) 에서 사용 예정
+# captum>=0.7        # Integrated Gradients 등
+# grad-cam>=1.5      # pytorch-grad-cam

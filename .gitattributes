@@ -1,0 +1,8 @@
+# 이 저장소의 코드는 전부 리눅스 클러스터에서 실행된다.
+# 윈도우에서 작업하더라도 줄바꿈을 LF 로 고정한다.
+# (CRLF 가 섞이면 쉘 스크립트가 클러스터에서 "bad interpreter" 로 죽는다.)
+* text=auto eol=lf
+
+*.jpg binary
+*.png binary
+*.pt  binary
