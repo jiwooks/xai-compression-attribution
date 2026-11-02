@@ -87,7 +87,7 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 |---|---|---|
 | 0 | 데이터 점검 + 마스크 정렬 검증 | **자동 점검 통과 (2026-10-28)** — 마스크 파일·크기 200/200, 일치율 95.0%. overlay 는 6장 중 2장만 육안 확인 |
 | 1 | dense ERM 기준 모델 학습 | **1회 실행, 재현 전 (2026-10-28)** — seed 0·1 통과, seed 2 는 avg 89.59 로 확인 필요. avg 90.00±0.39 / WGA 66.25±3.90 / 격차 23.75pt |
-| 2 | 반사실 이미지 생성 + `S` 측정 | **미착수** |
+| 2 | 반사실 이미지 생성 + `S` 측정 | **dense 1회 측정, 재현 전 (2026-11-03)** — S 0.081 (seed 0.079·0.080·0.085), 배경 400장 풀. `WORKLOG.md` 참고 |
 | 3 | pruning 파이프라인 | **미착수** |
 | 4 | attribution (Grad-CAM/IG/RISE) + `Attr_bg` | **미착수** |
 | 5 | 추적성 분석 (Spearman, AUROC) | **미착수** |
@@ -182,6 +182,19 @@ PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 att
     `CUDA driver is too old` 로 `torch.cuda.is_available()` 이 `False` 였다.
     cu121 휠은 GPU 동작을 확인했다. 다른 빌드는 테스트하지 않았다. **cu121 휠을 쓸 것.**
 
+13. **`S` 는 방향을 구분하지 않는다** ★2026-11-03 확인
+    원래 틀린 예측이 맞게 바뀌어도 flip 으로 센다. dense 모델의 opp flip 상당수가 이런 경우이고,
+    그래서 `landbird/water` 의 `S` 가 음수로 나온다. 그룹별 `S` 만 보고 해석하지 말고
+    `by_group_and_orig_correct` 도 함께 볼 것.
+
+14. **`srun` 은 표준입력을 삼킨다** ★2026-11-03 확인
+    `ssh aurora 'bash -s' <<EOF` 안에서 `srun` 을 부르면 뒤 명령이 실행되지 않는다.
+    `</dev/null` 을 붙이거나 스크립트 파일로 실행한다.
+
+15. **`srun` 은 프로젝트 폴더에서 실행한다** ★2026-11-03 확인
+    잡 스크립트가 `SLURM_SUBMIT_DIR` 로 프로젝트 경로를 잡으므로, 다른 폴더에서 실행하면
+    `_common.sh` 를 찾지 못한다.
+
 ---
 
 ## 6. 코드 구조
@@ -196,6 +209,8 @@ requirements.txt        torch/torchvision 은 setup_env.sh 에서 cu121 로 따�
 check_data.py           STEP 0. 데이터/마스크 점검 (torch 불필요)
 waterbirds.py           데이터셋 로더, 전처리, 그룹별 평가 유틸
 train_erm.py            STEP 1. dense ERM 학습
+generate_counterfactuals.py  STEP 2. 반사실 이미지 생성
+measure_shortcut.py     STEP 2. BFR, S 측정
 scripts/
   _common.sh            잡 스크립트 공통 경로·캐시 설정
   setup_env.sh          conda 환경 xai 생성 (계산 노드에서 실행)
@@ -205,9 +220,13 @@ scripts/
   smoke_test.sh         파이프라인 점검 (subset 128, 2 epoch)
   train_slurm.sh        STEP 1 sbatch 제출 (batch_ugrad)
   train_direct.sh       srun 대화형 세션용
+  download_places.sh    Places 평가셋에서 배경 400장 추출 (sbatch)
+  stage_cf.sh           배경·반사실 tar 를 로컬로 펼치기
+  generate_cf_slurm.sh  반사실 생성 후 NAS 에 tar 로 저장
+  measure_shortcut_slurm.sh  S 측정 (sbatch)
 data_check/             STEP 0 결과. overlay 이미지만 git 추적
-runs/                   실행 산출물. args.json, log.csv, final_test.json 만 git 추적
-logs/                   SLURM 출력. erm-*.out 만 git 추적
+runs/                   실행 산출물. args.json, log.csv, final_test.json, shortcut_*.json 만 git 추적
+logs/                   SLURM 출력. erm-*.out, shortcut-*.out 만 git 추적
 ```
 
 `waterbirds.py` 의 공개 API
@@ -223,9 +242,11 @@ logs/                   SLURM 출력. erm-*.out 만 git 추적
 
 ---
 
-## 7. 다음에 할 일 (STEP 2 설계 메모)
+## 7. STEP 2 설계 메모
 
-반사실 이미지 생성기를 만든다.
+구현은 `generate_counterfactuals.py`, `measure_shortcut.py` 에 있다. 결과는 `WORKLOG.md` 참고.
+배경은 Places365 평가셋 4개 카테고리 400장(타입별 200장)을 쓴다. 학습 풀 `train_large` 는
+112.6GB 인데 서버가 연결당 약 0.5MB/s 라 받지 않았다.
 
 입력: Waterbirds 테스트 이미지 + CUB 마스크 + Places 배경 풀
 출력: 이미지마다
@@ -237,7 +258,7 @@ logs/                   SLURM 출력. erm-*.out 만 git 추적
   원본과 반사실이 같은 파이프라인을 공유해야 붙여넣기 artifact 가 조건 간에 일정하게 유지된다.
 - 배경은 학습에 쓰이지 않은 held-out 이미지에서 가져온다.
 - Places 카테고리: 땅 = `bamboo_forest`, `forest/broadleaf` / 물 = `ocean`, `lake/natural`
-- Places 전체는 용량이 크다. 해당 카테고리만 받는 방법을 먼저 확인할 것.
+- 공식 스크립트처럼 소프트 마스크를 그대로 쓰고 `.jpg` 기본 품질로 저장한다.
 - 배경을 여러 장 샘플링해 평균을 내면 `S` 의 분산이 줄어든다.
 
 이후 `S` 측정 스크립트는 `evaluate_groups` 와 같은 구조로 작성하되,

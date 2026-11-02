@@ -20,6 +20,7 @@ runs/**
 !runs/*/args.json
 !runs/*/log.csv
 !runs/*/final_test.json
+!runs/*/shortcut_*.json
 #   smoke test 산출물은 의미 없는 숫자라 제외
 runs/smoke/**
 
@@ -34,6 +35,7 @@ data_check/**
 logs/**
 !logs/**/
 !logs/erm-*.out
+!logs/shortcut-*.out
 *.err
 nohup.out
 

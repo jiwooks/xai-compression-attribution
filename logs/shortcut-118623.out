@@ -1,0 +1,25 @@
+==> node=aurora-g7  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+[skip] places_val_bg.tar 이미 펼쳐져 있음
+[skip] counterfactuals_k5.tar 이미 펼쳐져 있음
+원본 정확도 90.04% (5794장)
+BFR_opp 0.1760  BFR_same 0.0965  S 0.0795 (95% CI 이미지 0.0720 ~ 0.0878, 이미지+배경 0.0660 ~ 0.0928)
+  landbird/land    n= 2255  opp 0.1498  same 0.0054  S 0.1444
+  landbird/water   n= 2255  opp 0.1544  same 0.1810  S -0.0266
+  waterbird/land   n=  642  opp 0.2639  same 0.1723  S 0.0916
+  waterbird/water  n=  642  opp 0.2558  same 0.0436  S 0.2121
+  landbird/land|wrong      n=    8  opp 0.4250  same 0.8750
+  landbird/land|correct    n= 2247  opp 0.1488  same 0.0023
+  landbird/water|wrong     n=  353  opp 0.9813  same 0.5756
+  landbird/water|correct   n= 1902  opp 0.0009  same 0.1078
+  waterbird/land|wrong     n=  188  opp 0.8926  same 0.2702
+  waterbird/land|correct   n=  454  opp 0.0035  same 0.1317
+  waterbird/water|wrong    n=   28  opp 0.0357  same 0.4143
+  waterbird/water|correct  n=  614  opp 0.2658  same 0.0267
