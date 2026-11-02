@@ -158,9 +158,9 @@ tail -f logs/erm-<JOBID>.out
 
 ## 다음 단계 (미리보기)
 
-- **STEP 2**: 반사실 이미지 생성 (같은 새를 다른 배경에 합성) → shortcut 지수 S 측정
+- **STEP 2**: 반사실 이미지 생성 + S 측정. 코드 완료, dense 결과는 `WORKLOG.md` 참고
 - **STEP 3**: pruning 파이프라인
 - **STEP 4**: attribution (Grad-CAM / IG / RISE) + Attr_bg
 - **STEP 5**: 추적성 분석 (Spearman, AUROC)
 
-STEP 2 가 사실상 이 프로젝트의 핵심 장치다. STEP 1 과 병렬로 시작해도 된다.
+STEP 2 가 사실상 이 프로젝트의 핵심 장치다.
