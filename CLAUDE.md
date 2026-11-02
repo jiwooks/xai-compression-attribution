@@ -38,7 +38,7 @@ Attribution map 은 별도 도구가 아니라 *압축된 모델 자신의* grad
 - 경희대 Seraph `aurora` 클러스터 (`aurora.khu.ac.kr:30080`, 계정 `jwook2480`, account `ugrad`)
 - SLURM. 학부 파티션 `batch_ugrad`(무제한) / `debug_ugrad`(4시간).
   QoS 한도: 동시 8잡 / 제출 16잡 / GPU 8장 / 최대 6일
-- GPU: RTX 3090 24GB, 드라이버 535.161.07 (CUDA 12.2) → **torch cu121 휠만 동작**
+- GPU: RTX 3090 24GB, 드라이버 535.161.07 (CUDA 12.2) → **torch cu121 휠 사용** (cu130 은 동작 안 함, 그 외 미검증)
 - 환경: `/data/jwook2480/miniconda3/envs/xai` (py3.11 + torch 2.5.1+cu121).
   잡에서는 `conda activate` 대신 절대경로 python 을 부른다.
 - **`/home` 은 계산 노드와 공유되지 않는다.** 코드·출력 모두 `/data/$USER/xai_project`.
@@ -85,8 +85,8 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 
 | STEP | 내용 | 상태 |
 |---|---|---|
-| 0 | 데이터 점검 + 마스크 정렬 검증 | **완료 (2026-10-28)** — 마스크 200/200 정렬, 일치율 95.0% |
-| 1 | dense ERM 기준 모델 학습 | **완료 (2026-10-28)** — seed 0,1,2 전부 통과. avg 90.00±0.39 / WGA 66.25±3.89 / 격차 23.7pt |
+| 0 | 데이터 점검 + 마스크 정렬 검증 | **자동 점검 통과 (2026-10-28)** — 마스크 파일·크기 200/200, 일치율 95.0%. overlay 는 6장 중 2장만 육안 확인 |
+| 1 | dense ERM 기준 모델 학습 | **1회 실행, 재현 전 (2026-10-28)** — seed 0·1 통과, seed 2 는 avg 89.59 로 확인 필요. avg 90.00±0.39 / WGA 66.25±3.90 / 격차 23.75pt |
 | 2 | 반사실 이미지 생성 + `S` 측정 | **미착수** |
 | 3 | pruning 파이프라인 | **미착수** |
 | 4 | attribution (Grad-CAM/IG/RISE) + `Attr_bg` | **미착수** |
@@ -178,9 +178,9 @@ PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 att
     `--override-channels -c conda-forge` 로 피한다 (`scripts/setup_env.sh` 에 반영됨).
 
 12. **torch CUDA 빌드 선택** ★2026-10-28 확인
-    aurora 의 드라이버는 535.161.07 (CUDA 12.2) 이다. cu124/cu126/cu130 휠은
-    `CUDA driver is too old` 로 `torch.cuda.is_available()` 이 `False` 가 된다.
-    **cu121 휠을 쓸 것.**
+    aurora 의 드라이버는 535.161.07 (CUDA 12.2) 이다. cu130 휠은
+    `CUDA driver is too old` 로 `torch.cuda.is_available()` 이 `False` 였다.
+    cu121 휠은 GPU 동작을 확인했다. 다른 빌드는 테스트하지 않았다. **cu121 휠을 쓸 것.**
 
 ---
 
@@ -190,22 +190,24 @@ PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 att
 CLAUDE.md               이 파일 (프로젝트 컨텍스트)
 SETUP.md                환경 구축 순서 (aurora 실측값)
 SERAPH_RULES.md         Seraph 사용 규칙 — 위반 시 1학기 정지
+WORKLOG.md              날짜별 작업 기록
 README.md               STEP 0-1 실행 방법
 requirements.txt        torch/torchvision 은 setup_env.sh 에서 cu121 로 따로 설치
 check_data.py           STEP 0. 데이터/마스크 점검 (torch 불필요)
 waterbirds.py           데이터셋 로더, 전처리, 그룹별 평가 유틸
 train_erm.py            STEP 1. dense ERM 학습
 scripts/
+  _common.sh            잡 스크립트 공통 경로·캐시 설정
   setup_env.sh          conda 환경 xai 생성 (계산 노드에서 실행)
-  download_data.sh      데이터 2종을 NAS 에 tar 로 내려받기 (압축 해제 안 함)
+  download_data.sh      tar 3종을 NAS 에 내려받기 (압축 해제 안 함)
   stage_data.sh         tar -> /local_datasets 로 펼치기 (모든 잡이 먼저 호출)
   check_data_slurm.sh   STEP 0 실행 래퍼
   smoke_test.sh         파이프라인 점검 (subset 128, 2 epoch)
   train_slurm.sh        STEP 1 sbatch 제출 (batch_ugrad)
   train_direct.sh       srun 대화형 세션용
-data_check/             (git 제외) STEP 0 결과
-runs/                   (git 제외) 체크포인트/로그
-logs/                   (git 제외) SLURM 출력
+data_check/             STEP 0 결과. overlay 이미지만 git 추적
+runs/                   실행 산출물. args.json, log.csv, final_test.json 만 git 추적
+logs/                   SLURM 출력. erm-*.out 만 git 추적
 ```
 
 `waterbirds.py` 의 공개 API
@@ -248,5 +250,5 @@ logs/                   (git 제외) SLURM 출력
 - 새 스크립트는 `--help` 가 동작하도록 argparse 를 붙인다.
 - 무거운 실행 전에는 `--subset` 같은 점검 모드를 먼저 돌린다.
 - 결과는 항상 seed 3개로 내고 bootstrap 신뢰구간을 함께 보고한다.
-- 체크포인트/데이터/로그는 git 에 올리지 않는다 (`.gitignore` 참고).
+- 체크포인트/데이터는 git 에 올리지 않는다. 추적하는 결과 파일은 `.gitignore` 참고.
 - 수치를 보고서에 쓸 때는 다른 사람이 한 번 재현한 뒤 확정한다.

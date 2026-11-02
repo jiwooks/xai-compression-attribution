@@ -20,8 +20,8 @@ echo "[1/3] conda 환경 생성: $ENV_NAME (python 3.11)"
 if [ -d "$ENV_DIR" ]; then
   echo "      이미 존재 -> 건너뜀"
 else
-  # Anaconda 기본 채널(repo.anaconda.com)은 ToS 동의를 요구하고 상업적 이용 제약이 있다.
-  # conda-forge 만 쓰면 그 문제를 피할 수 있다.
+  # Anaconda 기본 채널(repo.anaconda.com)은 비대화형 실행에서 ToS 동의를 요구하며 멈춘다.
+  # conda-forge 만 쓰면 이 절차 없이 진행된다.
   "$CONDA_ROOT/bin/conda" create -y -n "$ENV_NAME" \
       --override-channels -c conda-forge python=3.11
 fi
@@ -30,7 +30,7 @@ PY="$ENV_DIR/bin/python"
 
 echo "[2/3] torch 2.5.1 + torchvision 0.20.1 (cu121) 설치"
 # 드라이버가 535.161.07 (CUDA 12.2) 이라 cu121 휠을 쓴다.
-# cu124/cu126/cu130 휠은 "driver is too old" 로 cuda.is_available() 이 False 가 된다.
+# cu130 휠은 "driver is too old" 로 cuda.is_available() 이 False 였다. 다른 빌드는 미검증.
 "$PY" -m pip install --no-input \
     torch==2.5.1+cu121 torchvision==0.20.1+cu121 \
     --index-url https://download.pytorch.org/whl/cu121

@@ -1,6 +1,9 @@
 # 모든 잡 스크립트가 source 한다. 단독 실행용이 아니다.
 #
-#   source "$(dirname "$0")/_common.sh"
+#   PROJ="${PROJ:-${SLURM_SUBMIT_DIR:-/data/$USER/xai_project}}"
+#   source "$PROJ/scripts/_common.sh"
+#
+# sbatch 는 스크립트를 복사해 실행하므로 dirname $0 을 쓰면 안 된다.
 
 PROJ="${PROJ:-/data/$USER/xai_project}"
 CONDA_ROOT="${CONDA_ROOT:-/data/$USER/miniconda3}"

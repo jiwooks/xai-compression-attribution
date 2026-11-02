@@ -2,7 +2,9 @@
 
 클러스터: `aurora.khu.ac.kr:30080` / 계정 `jwook2480` / 소속 account `ugrad`
 
-> 아래 내용은 2026-10-28 에 실제로 클러스터에서 확인한 값이다.
+> 아래 내용은 2026-10-28 에 위 계정으로 클러스터에서 확인한 값이다.
+> **다른 계정은 배정 클러스터·포트·파티션을 본인 포털과 `show-assoc` 로 먼저 확인할 것.**
+> 파티션은 소속에 따라 다를 수 있고, 그 경우 스크립트의 `-p` / `--partition` 도 바꿔야 한다.
 > Seraph 공통 규칙은 `SERAPH_RULES.md` 를 먼저 읽을 것. **위반 시 1학기 사용 정지.**
 
 ---
@@ -12,16 +14,16 @@
 | 항목 | 값 |
 |---|---|
 | 스케줄러 | SLURM. 학부 파티션 `batch_ugrad`(무제한) / `debug_ugrad`(4시간) |
-| 노드 | `aurora-g1~g8`, 노드당 CPU 64코어(g1은 96) / RAM 약 420GB / **GPU 8장** |
+| 노드 | `aurora-g1~g8`, 노드당 CPU 64코어(g1은 96) / RAM 약 420GB / **GPU 8장(g7만 6장)** |
 | GPU | **RTX 3090 24GB**, 드라이버 `535.161.07` (CUDA 12.2), nvcc 12.3 |
 | QoS 한도 | 동시 실행 8잡 / 제출 16잡 / GPU 8장 / 최대 6일 |
 | 마스터 노드 | `aurora-master`. **GPU 없음**, `nvidia-smi` 자체가 없다 |
 | 시스템 python | 3.8.10 — `requirements.txt` 설치 불가(`scipy>=1.11` 휠 없음). conda 를 쓴다 |
-| conda | `/data/jwook2480/miniconda3` (이미 설치되어 있음) |
-| `/home` | **계산 노드와 공유되지 않는다.** 90% 사용 중. 설정 파일만 둘 것 |
+| conda | `/data/jwook2480/miniconda3` (이 계정에 이미 설치되어 있음. 다른 계정은 `/data/$USER/miniconda3` 에 직접 설치) |
+| `/home` | **계산 노드와 공유되지 않는다** (`aurora-g7` 에서 확인). 90% 사용 중. 설정 파일만 둘 것 |
 | `/data` (NAS) | 109T 중 31T 여유. 코드·환경·tar 를 여기 둔다 |
 | `/local_datasets` | 계산 노드 로컬 NVMe. 데이터는 잡 안에서 여기로 펼쳐 쓴다 |
-| 외부 네트워크 | 열려 있음 (PyPI 89MB/s) |
+| 외부 네트워크 | 열려 있음 (PyTorch 휠 다운로드 89MB/s) |
 | 공용 Waterbirds/CUB | **없음**. 직접 받아야 한다 |
 
 ---
@@ -70,10 +72,12 @@ srun -p debug_ugrad --gres=gpu:1 --cpus-per-gpu=8 --mem-per-gpu=32G -t 1:00:00 \
 - `/data/$USER/miniconda3/envs/xai` 생성 (python 3.11, **conda-forge 전용**)
   — Anaconda 기본 채널은 ToS 동의를 요구하므로 쓰지 않는다
 - `torch==2.5.1+cu121`, `torchvision==0.20.1+cu121` 설치
-  — 드라이버가 535 라서 cu124/cu126/cu130 휠은 `driver is too old` 로 GPU 를 못 잡는다
+  — 드라이버가 535 (CUDA 12.2) 다. cu121 은 동작을 확인했고, cu130 은 `driver is too old` 로
+    GPU 를 못 잡았다. 다른 빌드는 테스트하지 않았다.
 - `requirements.txt` 설치
 
-기존 `ax` 환경(py3.11 + torch 2.5.1+cu121)은 다른 작업용이므로 건드리지 않는다.
+`setup_env.sh` 는 `/data/$USER/miniconda3` 가 이미 있다고 가정한다. 없으면 먼저 설치할 것.
+이 계정의 기존 `ax` 환경은 건드리지 않았다.
 
 > 잡 스크립트에서는 `conda activate` 대신 `envs/xai/bin/python` 을 직접 부른다.
 > `~/.bashrc` 가 `/home` 에 있어 처음 가는 노드에서는 conda init 이 안 되어 있다.
@@ -87,18 +91,19 @@ srun -p debug_ugrad --gres=gpu:1 --cpus-per-gpu=8 --mem-per-gpu=32G -t 1:00:00 \
 ```bash
 # (1) NAS 로 내려받기 (한 번만). 압축은 풀지 않는다.
 srun -p debug_ugrad --cpus-per-task=4 --mem=8G -t 2:00:00 bash scripts/download_data.sh
-#     -> /data/$USER/datasets/xai/*.tar.gz
+#     -> /data/$USER/datasets/xai/ 에 tar 3개
 
-# (2) 계산 노드 로컬로 펼치기 — 학습 스크립트가 자동으로 호출한다.
+# (2) 계산 노드 로컬로 펼치기 — 잡 스크립트가 자동으로 호출한다 (직접 실행도 계산 노드에서).
 bash scripts/stage_data.sh
 #     -> /local_datasets/$USER/xai/{waterbird_complete95_forest2water2,CUB_200_2011}
 ```
 
-- Waterbirds 압축 467MB / 해제 후 약 1.3GB. `nlp.stanford.edu` 는 응답이 없어
+- Waterbirds 압축 468MB / 해제 후 494MB. `nlp.stanford.edu` 는 응답이 없어
   `downloads.cs.stanford.edu` 미러를 먼저 쓴다.
-- CUB-200-2011 약 1.1GB. 마스크(`segmentations/`) 때문에 반드시 필요하다.
-- `/local_datasets` 는 **노드마다 따로**다. `stage_data.sh` 는 이미 있으면 건너뛰므로
-  잡마다 불러도 된다.
+- CUB-200-2011 압축 1.1GB. 원본 이미지와 메타데이터만 들어 있다.
+- `segmentations.tgz` 38MB. **마스크는 CUB tar 에 없고 이 파일을 별도 레코드에서 받는다.**
+- `/local_datasets` 는 **노드마다 따로**다. `stage_data.sh` 는 펼치기가 끝난 tar 는 건너뛰고,
+  같은 노드에 잡이 동시에 걸리면 잠금으로 하나만 펼치므로 잡마다 불러도 된다.
 
 ---
 
@@ -111,7 +116,7 @@ mkdir -p logs
 # (1) 데이터/마스크 점검
 srun -p debug_ugrad --cpus-per-task=8 --mem=16G -t 1:00:00 bash scripts/check_data_slurm.sh
 
-# (2) 파이프라인 점검 (1분)
+# (2) 파이프라인 점검 (1~2분)
 srun -p debug_ugrad --gres=gpu:1 --cpus-per-gpu=8 --mem-per-gpu=32G -t 0:30:00 \
      bash scripts/smoke_test.sh
 
@@ -129,12 +134,8 @@ squeue -u $USER
 
 ## 6. 팀 공유
 
-```bash
-git init
-git add .
-git commit -m "STEP 0-1: 데이터 점검 및 ERM 학습 코드"
-git remote add origin <저장소 URL>
-git push -u origin main
-```
+비공개 저장소: https://github.com/jiwooks/xai-compression-attribution
+접근하려면 협업자 초대가 필요하다.
 
-`.gitignore` 에 데이터/체크포인트/로그가 이미 제외되어 있다.
+`.gitignore` 가 데이터·체크포인트를 제외한다. overlay 이미지와 `runs/` 의 작은 결과 파일,
+`logs/erm-*.out` 은 공유를 위해 추적한다.

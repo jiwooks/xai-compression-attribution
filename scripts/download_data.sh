@@ -35,7 +35,7 @@ get () {   # $1 = 파일명, $2.. = 시도할 URL 들
 }
 
 # ---------------------------------------------------------------- Waterbirds
-# 압축 468MB / 해제 후 약 494MB. 학습·평가용 공식 배포본.
+# 압축 468MB / 해제 후 494MB. 학습·평가용 공식 배포본.
 # nlp.stanford.edu 는 현재 응답이 없어 downloads.cs.stanford.edu 를 먼저 쓴다.
 get "waterbird_complete95_forest2water2.tar.gz" \
     "https://downloads.cs.stanford.edu/nlp/data/dro/waterbird_complete95_forest2water2.tar.gz" \
