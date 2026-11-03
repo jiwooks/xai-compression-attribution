@@ -159,7 +159,7 @@ tail -f logs/erm-<JOBID>.out
 ## 다음 단계 (미리보기)
 
 - **STEP 2**: 반사실 이미지 생성 + S 측정. 코드 완료, dense 결과는 `WORKLOG.md` 참고
-- **STEP 3**: pruning 파이프라인
+- **STEP 3**: pruning 파이프라인. 1회 실행 완료, `results/pruning_k5.md` 와 `WORKLOG.md` 참고
 - **STEP 4**: attribution (Grad-CAM / IG / RISE) + Attr_bg
 - **STEP 5**: 추적성 분석 (Spearman, AUROC)
 
