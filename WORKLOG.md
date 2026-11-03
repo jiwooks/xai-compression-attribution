@@ -5,6 +5,75 @@
 
 ---
 
+## 2026-11-03 (2) — STEP 3 pruning + fine-tuning
+
+### 한 줄 요약
+
+평균 정확도가 유지되는 구간(sparsity 70% 이하)에서는 **`S` 가 거의 변하지 않았다.**
+fine-tuning 만 한 대조군(ft0) 대비 변화는 -0.0035 ~ +0.0007 로, H1 기준(dense seed 표준편차 2배, 0.0069) 이내다.
+`S` 가 크게 오르는 것은 정확도가 2pt 넘게 떨어지는 90%, 95% 에서뿐이다. 재현 전 수치다.
+
+### 실행 방법
+
+```bash
+cd /data/$USER/xai_project && mkdir -p logs
+for s in 0 1 2; do
+  sbatch scripts/prune_slurm.sh $s "0 30 50 70"
+  sbatch scripts/prune_slurm.sh $s "80 90 95"
+done                                   # 잡 6개, 각 15~26분
+srun -p debug_ugrad --cpus-per-task=1 --mem=2G -t 0:05:00      /data/$USER/miniconda3/envs/xai/bin/python summarize_pruning.py --out results/pruning_k5.md
+```
+
+### 설정
+
+- Conv/Linear 가중치 전역 magnitude one-shot pruning. BatchNorm, bias 는 자르지 않는다.
+- 마스크 고정 후 ERM 과 같은 설정(SGD lr 1e-3, momentum 0.9, wd 1e-4, 증강, AMP)으로 20 epoch fine-tuning.
+- 모델 선택은 validation 평균 정확도. fine-tuning 한 epoch 중에서만 고른다.
+- sparsity 0 도 같은 fine-tuning 을 거친다 (ft0). fine-tuning 자체의 효과를 분리하기 위한 대조군이다.
+- 저장된 모델의 실제 sparsity 가 목표와 0.5%p 넘게 다르면 멈춘다. 21개 모두 목표와 일치했다.
+- 20 epoch 은 정한 값이고, 길이에 따른 민감도는 보지 않았다.
+
+### 결과 (seed 3개 평균, 전체는 `results/pruning_k5.md`)
+
+| sparsity | avg | WGA | Δavg vs dense | 제외 seed | S | ΔS vs dense | ΔS vs ft0 |
+|---|---|---|---|---|---|---|---|
+| dense | 90.00 | 66.25 | - | 0/3 | 0.0812 | - | - |
+| 0 (ft0) | 89.56 | 67.45 | -0.44 | 0/3 | 0.0859 | +0.0047 | - |
+| 30% | 89.64 | 67.39 | -0.36 | 0/3 | 0.0866 | +0.0054 | +0.0007 |
+| 50% | 89.83 | 67.39 | -0.17 | 0/3 | 0.0825 | +0.0013 | -0.0035 |
+| 70% | 89.30 | 67.39 | -0.70 | 0/3 | 0.0853 | +0.0041 | -0.0006 |
+| 80% | 88.19 | 65.84 | -1.81 | 1/3 | 0.0903 | +0.0091 | +0.0044 |
+| 90% | 85.93 | 57.01 | -4.07 | 3/3 | 0.1102 | +0.0290 | +0.0243 |
+| 95% | 77.21 | 28.61 | -12.79 | 3/3 | 0.2316 | +0.1504 | +0.1457 |
+
+- **fine-tuning 만으로도 `S` 가 +0.0047 움직인다.** dense 와 비교하면 pruning 효과와 섞인다.
+- **80% 는 seed 에 따라 갈린다.** seed 0 은 avg 가 2.30pt 떨어져 제외된다. 남은 seed 1, 2 의 ΔS 는
+  dense 대비 +0.0137, +0.0020 (평균 +0.0079, 기준 초과), ft0 대비 +0.0081, -0.0033 (평균 +0.0024).
+- **90% 이상은 정확도가 무너진 모델이다.** CLAUDE.md 규칙상 메인 분석에서 제외한다.
+- fine-tuning 전 one-shot 은 80% 이상에서 avg 77.84%, WGA 0% 다. 테스트셋 landbird 비율(77.84%)과 같아,
+  전부 landbird 로 예측하는 상태다. fine-tuning 으로 회복된다.
+- 분해 지표에서 `d_correct` 는 0.042(dense) → 0.048(80%) → 0.061(90%) 로 오른다. 원래 맞은 이미지가
+  배경에 더 민감해지는 방향이지만, 70% 이하에서는 seed 간 차이 안이다.
+
+### 해석과 한계
+
+- 이 프로토콜에서는 **정확도가 유지되는 압축이 행동 기반 shortcut 의존을 바꾸지 않는다.**
+  CLAUDE.md 의 H1 기각 조건("모든 sparsity 에서 S 변화가 seed 표준편차 2배 이내")에 가깝다.
+  다만 80% 는 기준에 따라 판정이 갈리고, 기준인 seed 표준편차를 seed 3개로 추정해 불안정하다.
+- **H2 의 모델 단위 Spearman 은 이 범위에서 의미가 약하다.** `S` 의 변동이 잡음 수준이라 순위가 안정되지 않는다.
+  이미지 단위 AUROC 는 영향을 덜 받는다.
+- ΔS 는 seed 평균 차이만 계산했고 신뢰구간은 없다.
+- 다른 pruning 방식(구조적 pruning, fine-tuning 없는 압축), 80~90% 사이 세분화는 해보지 않았다.
+
+### 다음에 할 일
+
+- [ ] H1 판정 기준(dense 대비 / ft0 대비) 결정
+- [ ] 80~90% 사이(예: 85%) 추가 여부 결정
+- [ ] STEP 4 attribution — 대상은 dense, ft0, 30/50/70% (필요하면 80%)
+- [ ] STEP 2·3 재현
+
+---
+
 ## 2026-11-03 — STEP 2 반사실 생성 + dense 모델 `S` 측정
 
 ### 한 줄 요약

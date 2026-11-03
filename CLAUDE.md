@@ -88,7 +88,7 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 | 0 | 데이터 점검 + 마스크 정렬 검증 | **자동 점검 통과 (2026-10-28)** — 마스크 파일·크기 200/200, 일치율 95.0%. overlay 는 6장 중 2장만 육안 확인 |
 | 1 | dense ERM 기준 모델 학습 | **1회 실행, 재현 전 (2026-10-28)** — seed 0·1 통과, seed 2 는 avg 89.59 로 확인 필요. avg 90.00±0.39 / WGA 66.25±3.90 / 격차 23.75pt |
 | 2 | 반사실 이미지 생성 + `S` 측정 | **dense 1회 측정, 재현 전 (2026-11-03)** — S 0.081 (seed 0.079·0.080·0.085), 배경 400장 풀. `WORKLOG.md` 참고 |
-| 3 | pruning 파이프라인 | **미착수** |
+| 3 | pruning 파이프라인 | **1회 실행, 재현 전 (2026-11-03)** — sparsity 0~95% × seed 3. 정확도 유지 구간(≤70%)에서 S 변화는 H1 기준 이내. `results/pruning_k5.md` |
 | 4 | attribution (Grad-CAM/IG/RISE) + `Attr_bg` | **미착수** |
 | 5 | 추적성 분석 (Spearman, AUROC) | **미착수** |
 | 6 | stress test S1~S5 | **미착수** |
@@ -118,6 +118,17 @@ ERM 표준 프로토콜대로 평균 기준으로 고른다.
 ### 압축 모델 분석 대상 제한
 평균 정확도가 dense 대비 2pt 넘게 떨어진 체크포인트는 메인 분석에서 제외한다.
 그냥 망가진 모델은 "판단 근거가 바뀌었다"고 말할 수 없다.
+
+### 2026-11-03 결정 사항
+- **seed 2 (avg 89.59) 는 재학습 없이 사용한다.** 보고서에 평균 90% 기준 미달을 명시한다.
+- **`S` 정의는 그대로 두고 방향별 지표를 보조로 함께 보고한다.**
+  `S = S_C→W + S_W→C` (정답 붕괴 + 오답 교정), `d_correct`, `d_wrong`
+  (원래 맞은/틀린 이미지 한 장당 opp 뒤집힘 − same 뒤집힘). 계산은 `summarize_pruning.py`.
+- **pruning 프로토콜:** Conv/Linear 가중치 전역 magnitude one-shot pruning 후 마스크를 고정하고
+  ERM 과 같은 설정으로 20 epoch fine-tuning. 모델 선택은 validation 평균 정확도.
+  sparsity 0 도 같은 fine-tuning 을 거쳐 대조군(ft0)으로 쓴다.
+- **미결정:** H1 의 `S` 변화를 dense 대비로 볼지 ft0 대비로 볼지. 결과를 본 뒤에 남은 결정이므로
+  보고서에는 두 기준을 모두 싣는다.
 
 ### 양자화는 메인에서 제외
 PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 attribution 계산이 막힌다.
@@ -211,6 +222,8 @@ waterbirds.py           데이터셋 로더, 전처리, 그룹별 평가 유틸
 train_erm.py            STEP 1. dense ERM 학습
 generate_counterfactuals.py  STEP 2. 반사실 이미지 생성
 measure_shortcut.py     STEP 2. BFR, S 측정
+prune_finetune.py       STEP 3. 전역 magnitude pruning + fine-tuning
+summarize_pruning.py    STEP 3. sparsity 별 정확도·S 요약표 (numpy 만 필요)
 scripts/
   _common.sh            잡 스크립트 공통 경로·캐시 설정
   setup_env.sh          conda 환경 xai 생성 (계산 노드에서 실행)
@@ -224,9 +237,11 @@ scripts/
   stage_cf.sh           배경·반사실 tar 를 로컬로 펼치기
   generate_cf_slurm.sh  반사실 생성 후 NAS 에 tar 로 저장
   measure_shortcut_slurm.sh  S 측정 (sbatch)
+  prune_slurm.sh        seed 하나의 sparsity 목록을 pruning + fine-tuning + S 측정 (sbatch)
+results/                요약표 (git 추적)
 data_check/             STEP 0 결과. overlay 이미지만 git 추적
 runs/                   실행 산출물. args.json, log.csv, final_test.json, shortcut_*.json 만 git 추적
-logs/                   SLURM 출력. erm-*.out, shortcut-*.out 만 git 추적
+logs/                   SLURM 출력. erm-*.out, shortcut-*.out, prune-*.out 만 git 추적
 ```
 
 `waterbirds.py` 의 공개 API

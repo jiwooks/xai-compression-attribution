@@ -1,0 +1,247 @@
+=== job 118818 | node aurora-g1 | seed 2 | sparsity 80 90 95 ===
+==> node=aurora-g1  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+[skip] places_val_bg.tar 이미 펼쳐져 있음
+[skip] counterfactuals_k5.tar 이미 펼쳐져 있음
+
+########## prune_sp80_seed2 ##########
+sparsity 목표 0.80 / 실제 0.8000
+[  0] one-shot (fine-tuning 전)
+  val : avg 76.90  adj 83.79  WGA 0.00 (g2)
+    landbird/land 100.0 | landbird/water 88.0 | waterbird/land 0.0 | waterbird/water 33.8
+  test: avg 77.01  adj 84.67  WGA 0.00 (g2)
+    landbird/land 100.0 | landbird/water 87.1 | waterbird/land 0.0 | waterbird/water 38.0
+[  2] loss 0.0391  acc 98.79  (20s)
+  val : avg 85.15  adj 96.81  WGA 59.40 (g2)
+    landbird/land 99.1 | landbird/water 75.8 | waterbird/land 59.4 | waterbird/water 94.7
+  test: avg 85.93  adj 96.79  WGA 63.24 (g2)
+    landbird/land 99.3 | landbird/water 76.8 | waterbird/land 63.2 | waterbird/water 93.6
+[  4] loss 0.0269  acc 99.27  (40s)
+  val : avg 85.57  adj 97.00  WGA 61.65 (g2)
+    landbird/land 99.4 | landbird/water 76.0 | waterbird/land 61.7 | waterbird/water 94.7
+  test: avg 86.59  adj 96.92  WGA 64.33 (g2)
+    landbird/land 99.3 | landbird/water 78.1 | waterbird/land 64.3 | waterbird/water 93.9
+[  6] loss 0.0191  acc 99.62  (60s)
+  val : avg 86.49  adj 97.09  WGA 60.90 (g2)
+    landbird/land 99.4 | landbird/water 78.5 | waterbird/land 60.9 | waterbird/water 94.7
+  test: avg 87.57  adj 97.01  WGA 64.95 (g2)
+    landbird/land 99.4 | landbird/water 80.4 | waterbird/land 65.0 | waterbird/water 93.6
+[  8] loss 0.0150  acc 99.75  (80s)
+  val : avg 86.99  adj 97.14  WGA 60.15 (g2)
+    landbird/land 99.4 | landbird/water 80.0 | waterbird/land 60.2 | waterbird/water 94.7
+  test: avg 87.64  adj 97.05  WGA 65.11 (g2)
+    landbird/land 99.5 | landbird/water 80.5 | waterbird/land 65.1 | waterbird/water 93.6
+[ 10] loss 0.0127  acc 99.79  (100s)
+  val : avg 87.66  adj 97.37  WGA 66.92 (g2)
+    landbird/land 99.4 | landbird/water 79.6 | waterbird/land 66.9 | waterbird/water 95.5
+  test: avg 88.00  adj 97.09  WGA 68.54 (g2)
+    landbird/land 99.4 | landbird/water 80.5 | waterbird/land 68.5 | waterbird/water 93.8
+[ 12] loss 0.0100  acc 99.87  (120s)
+  val : avg 87.41  adj 97.19  WGA 68.42 (g2)
+    landbird/land 99.4 | landbird/water 78.8 | waterbird/land 68.4 | waterbird/water 94.7
+  test: avg 87.88  adj 97.30  WGA 67.91 (g2)
+    landbird/land 99.5 | landbird/water 80.0 | waterbird/land 67.9 | waterbird/water 94.5
+[ 14] loss 0.0093  acc 99.90  (140s)
+  val : avg 87.74  adj 97.22  WGA 64.66 (g2)
+    landbird/land 99.4 | landbird/water 80.7 | waterbird/land 64.7 | waterbird/water 94.7
+  test: avg 88.00  adj 97.25  WGA 66.20 (g2)
+    landbird/land 99.5 | landbird/water 80.9 | waterbird/land 66.2 | waterbird/water 94.2
+[ 16] loss 0.0081  acc 99.92  (160s)
+  val : avg 87.99  adj 97.72  WGA 66.92 (g2)
+    landbird/land 99.4 | landbird/water 80.0 | waterbird/land 66.9 | waterbird/water 97.0
+  test: avg 87.83  adj 97.23  WGA 68.38 (g2)
+    landbird/land 99.5 | landbird/water 79.9 | waterbird/land 68.4 | waterbird/water 94.4
+[ 18] loss 0.0064  acc 99.96  (180s)
+  val : avg 88.16  adj 97.73  WGA 63.16 (g2)
+    landbird/land 99.4 | landbird/water 81.5 | waterbird/land 63.2 | waterbird/water 97.0
+  test: avg 88.33  adj 97.12  WGA 66.67 (g2)
+    landbird/land 99.5 | landbird/water 81.9 | waterbird/land 66.7 | waterbird/water 93.5
+[ 20] loss 0.0077  acc 99.83  (200s)
+  val : avg 88.16  adj 97.26  WGA 60.15 (g2)
+    landbird/land 99.4 | landbird/water 83.0 | waterbird/land 60.2 | waterbird/water 94.7
+  test: avg 88.87  adj 97.10  WGA 64.33 (g2)
+    landbird/land 99.5 | landbird/water 84.0 | waterbird/land 64.3 | waterbird/water 93.1
+
+==============================================================
+best checkpoint (epoch 18) 의 테스트 성능, 실제 sparsity 0.8000
+==============================================================
+avg 88.33  adj 97.12  WGA 66.67 (g2)
+    landbird/land 99.5 | landbird/water 81.9 | waterbird/land 66.7 | waterbird/water 93.5
+원본 정확도 88.33% (5794장)
+BFR_opp 0.2028  BFR_same 0.1156  S 0.0872 (95% CI 이미지 0.0785 ~ 0.0958, 이미지+배경 0.0733 ~ 0.1019)
+  landbird/land    n= 2255  opp 0.1852  same 0.0087  S 0.1765
+  landbird/water   n= 2255  opp 0.1784  same 0.2187  S -0.0404
+  waterbird/land   n=  642  opp 0.2963  same 0.1829  S 0.1134
+  waterbird/water  n=  642  opp 0.2570  same 0.0614  S 0.1956
+  landbird/land|wrong      n=   11  opp 0.2182  same 0.8727
+  landbird/land|correct    n= 2244  opp 0.1850  same 0.0045
+  landbird/water|wrong     n=  409  opp 0.9790  same 0.5731
+  landbird/water|correct   n= 1846  opp 0.0010  same 0.1402
+  waterbird/land|wrong     n=  214  opp 0.8850  same 0.2776
+  waterbird/land|correct   n=  428  opp 0.0019  same 0.1355
+  waterbird/water|wrong    n=   42  opp 0.0571  same 0.5190
+  waterbird/water|correct  n=  600  opp 0.2710  same 0.0293
+
+########## prune_sp90_seed2 ##########
+sparsity 목표 0.90 / 실제 0.9000
+[  0] one-shot (fine-tuning 전)
+  val : avg 77.81  adj 76.79  WGA 0.00 (g2)
+    landbird/land 100.0 | landbird/water 100.0 | waterbird/land 0.0 | waterbird/water 0.0
+  test: avg 77.84  adj 76.79  WGA 0.00 (g2)
+    landbird/land 100.0 | landbird/water 100.0 | waterbird/land 0.0 | waterbird/water 0.0
+[  2] loss 0.1593  acc 94.66  (20s)
+  val : avg 74.65  adj 93.72  WGA 33.83 (g2)
+    landbird/land 98.9 | landbird/water 58.8 | waterbird/land 33.8 | waterbird/water 85.7
+  test: avg 75.01  adj 94.11  WGA 34.27 (g2)
+    landbird/land 98.8 | landbird/water 59.2 | waterbird/land 34.3 | waterbird/water 87.9
+[  4] loss 0.1060  acc 96.27  (40s)
+  val : avg 81.73  adj 95.04  WGA 43.61 (g2)
+    landbird/land 99.1 | landbird/water 73.4 | waterbird/land 43.6 | waterbird/water 88.0
+  test: avg 81.26  adj 94.95  WGA 42.52 (g2)
+    landbird/land 99.2 | landbird/water 72.5 | waterbird/land 42.5 | waterbird/water 87.5
+[  6] loss 0.0841  acc 96.96  (60s)
+  val : avg 82.24  adj 95.42  WGA 50.38 (g2)
+    landbird/land 98.9 | landbird/water 72.3 | waterbird/land 50.4 | waterbird/water 90.2
+  test: avg 81.88  adj 95.57  WGA 48.29 (g2)
+    landbird/land 99.1 | landbird/water 71.8 | waterbird/land 48.3 | waterbird/water 90.7
+[  8] loss 0.0673  acc 97.83  (80s)
+  val : avg 84.57  adj 95.49  WGA 49.62 (g2)
+    landbird/land 99.1 | landbird/water 78.8 | waterbird/land 49.6 | waterbird/water 88.7
+  test: avg 84.76  adj 95.87  WGA 49.53 (g2)
+    landbird/land 99.4 | landbird/water 78.8 | waterbird/land 49.5 | waterbird/water 89.6
+[ 10] loss 0.0538  acc 98.25  (101s)
+  val : avg 83.90  adj 95.57  WGA 54.89 (g2)
+    landbird/land 99.4 | landbird/water 75.3 | waterbird/land 54.9 | waterbird/water 88.7
+  test: avg 84.33  adj 96.03  WGA 51.71 (g2)
+    landbird/land 99.3 | landbird/water 76.8 | waterbird/land 51.7 | waterbird/water 90.8
+[ 12] loss 0.0456  acc 98.67  (121s)
+  val : avg 84.32  adj 96.11  WGA 57.89 (g2)
+    landbird/land 98.9 | landbird/water 74.9 | waterbird/land 57.9 | waterbird/water 92.5
+  test: avg 84.60  adj 96.26  WGA 55.61 (g2)
+    landbird/land 99.3 | landbird/water 76.1 | waterbird/land 55.6 | waterbird/water 91.9
+[ 14] loss 0.0401  acc 98.79  (140s)
+  val : avg 84.74  adj 95.99  WGA 57.89 (g2)
+    landbird/land 98.9 | landbird/water 76.2 | waterbird/land 57.9 | waterbird/water 91.7
+  test: avg 85.55  adj 96.32  WGA 57.79 (g2)
+    landbird/land 99.3 | landbird/water 78.0 | waterbird/land 57.8 | waterbird/water 91.7
+[ 16] loss 0.0318  acc 99.10  (160s)
+  val : avg 85.07  adj 96.34  WGA 60.90 (g2)
+    landbird/land 98.9 | landbird/water 75.8 | waterbird/land 60.9 | waterbird/water 93.2
+  test: avg 85.35  adj 96.37  WGA 61.37 (g2)
+    landbird/land 99.2 | landbird/water 76.3 | waterbird/land 61.4 | waterbird/water 92.2
+[ 18] loss 0.0298  acc 99.12  (180s)
+  val : avg 85.49  adj 95.91  WGA 59.40 (g2)
+    landbird/land 98.9 | landbird/water 77.9 | waterbird/land 59.4 | waterbird/water 91.0
+  test: avg 85.62  adj 96.39  WGA 56.54 (g2)
+    landbird/land 99.3 | landbird/water 78.4 | waterbird/land 56.5 | waterbird/water 91.9
+[ 20] loss 0.0277  acc 99.23  (201s)
+  val : avg 85.49  adj 95.90  WGA 56.39 (g2)
+    landbird/land 99.1 | landbird/water 78.8 | waterbird/land 56.4 | waterbird/water 90.2
+  test: avg 86.43  adj 96.43  WGA 56.70 (g2)
+    landbird/land 99.5 | landbird/water 80.5 | waterbird/land 56.7 | waterbird/water 91.3
+
+==============================================================
+best checkpoint (epoch 18) 의 테스트 성능, 실제 sparsity 0.9000
+==============================================================
+avg 85.62  adj 96.39  WGA 56.54 (g2)
+    landbird/land 99.3 | landbird/water 78.4 | waterbird/land 56.5 | waterbird/water 91.9
+원본 정확도 85.62% (5794장)
+BFR_opp 0.2400  BFR_same 0.1232  S 0.1168 (95% CI 이미지 0.1079 ~ 0.1254, 이미지+배경 0.1014 ~ 0.1332)
+  landbird/land    n= 2255  opp 0.2075  same 0.0107  S 0.1968
+  landbird/water   n= 2255  opp 0.2118  same 0.2276  S -0.0158
+  waterbird/land   n=  642  opp 0.3673  same 0.1925  S 0.1748
+  waterbird/water  n=  642  opp 0.3262  same 0.0826  S 0.2436
+  landbird/land|wrong      n=   15  opp 0.2000  same 0.8133
+  landbird/land|correct    n= 2240  opp 0.2076  same 0.0054
+  landbird/water|wrong     n=  487  opp 0.9729  same 0.5318
+  landbird/water|correct   n= 1768  opp 0.0021  same 0.1438
+  waterbird/land|wrong     n=  279  opp 0.8351  same 0.2308
+  waterbird/land|correct   n=  363  opp 0.0077  same 0.1631
+  waterbird/water|wrong    n=   52  opp 0.0538  same 0.5423
+  waterbird/water|correct  n=  590  opp 0.3502  same 0.0420
+
+########## prune_sp95_seed2 ##########
+sparsity 목표 0.95 / 실제 0.9500
+[  0] one-shot (fine-tuning 전)
+  val : avg 77.81  adj 76.79  WGA 0.00 (g2)
+    landbird/land 100.0 | landbird/water 100.0 | waterbird/land 0.0 | waterbird/water 0.0
+  test: avg 77.84  adj 76.79  WGA 0.00 (g2)
+    landbird/land 100.0 | landbird/water 100.0 | waterbird/land 0.0 | waterbird/water 0.0
+[  2] loss 0.4227  acc 89.55  (20s)
+  val : avg 64.72  adj 87.35  WGA 2.26 (g2)
+    landbird/land 99.1 | landbird/water 49.6 | waterbird/land 2.3 | waterbird/water 59.4
+  test: avg 64.50  adj 88.10  WGA 0.93 (g2)
+    landbird/land 99.3 | landbird/water 48.3 | waterbird/land 0.9 | waterbird/water 62.5
+[  4] loss 0.2795  acc 90.47  (40s)
+  val : avg 63.22  adj 89.43  WGA 3.76 (g2)
+    landbird/land 98.7 | landbird/water 42.3 | waterbird/land 3.8 | waterbird/water 71.4
+  test: avg 62.69  adj 89.14  WGA 2.34 (g2)
+    landbird/land 99.0 | landbird/water 41.6 | waterbird/land 2.3 | waterbird/water 69.3
+[  6] loss 0.2332  acc 91.82  (59s)
+  val : avg 62.97  adj 91.45  WGA 5.26 (g2)
+    landbird/land 98.7 | landbird/water 38.4 | waterbird/land 5.3 | waterbird/water 81.2
+  test: avg 62.43  adj 90.90  WGA 5.14 (g2)
+    landbird/land 98.7 | landbird/water 37.8 | waterbird/land 5.1 | waterbird/water 78.8
+[  8] loss 0.1971  acc 92.93  (79s)
+  val : avg 67.14  adj 92.46  WGA 5.26 (g2)
+    landbird/land 99.4 | landbird/water 48.3 | waterbird/land 5.3 | waterbird/water 82.0
+  test: avg 66.71  adj 91.43  WGA 6.54 (g2)
+    landbird/land 99.1 | landbird/water 48.2 | waterbird/land 6.5 | waterbird/water 78.0
+[ 10] loss 0.1722  acc 93.83  (99s)
+  val : avg 69.14  adj 93.47  WGA 10.53 (g2)
+    landbird/land 98.9 | landbird/water 50.9 | waterbird/land 10.5 | waterbird/water 87.2
+  test: avg 68.85  adj 92.63  WGA 11.99 (g2)
+    landbird/land 98.9 | landbird/water 50.8 | waterbird/land 12.0 | waterbird/water 83.3
+[ 12] loss 0.1548  acc 94.49  (119s)
+  val : avg 71.56  adj 93.87  WGA 16.54 (g2)
+    landbird/land 98.9 | landbird/water 55.2 | waterbird/land 16.5 | waterbird/water 88.0
+  test: avg 71.35  adj 93.08  WGA 17.45 (g2)
+    landbird/land 99.0 | landbird/water 55.4 | waterbird/land 17.4 | waterbird/water 84.1
+[ 14] loss 0.1359  acc 94.79  (139s)
+  val : avg 72.98  adj 94.17  WGA 17.29 (g2)
+    landbird/land 98.9 | landbird/water 58.4 | waterbird/land 17.3 | waterbird/water 88.7
+  test: avg 73.02  adj 93.41  WGA 18.07 (g2)
+    landbird/land 99.0 | landbird/water 59.3 | waterbird/land 18.1 | waterbird/water 84.9
+[ 16] loss 0.1245  acc 95.64  (159s)
+  val : avg 75.06  adj 94.70  WGA 24.06 (g2)
+    landbird/land 98.7 | landbird/water 61.4 | waterbird/land 24.1 | waterbird/water 91.0
+  test: avg 75.04  adj 94.13  WGA 22.12 (g2)
+    landbird/land 98.9 | landbird/water 62.7 | waterbird/land 22.1 | waterbird/water 87.5
+[ 18] loss 0.1114  acc 95.85  (179s)
+  val : avg 75.65  adj 94.76  WGA 24.81 (g2)
+    landbird/land 98.7 | landbird/water 62.7 | waterbird/land 24.8 | waterbird/water 91.0
+  test: avg 75.80  adj 94.10  WGA 23.83 (g2)
+    landbird/land 99.1 | landbird/water 64.3 | waterbird/land 23.8 | waterbird/water 86.4
+[ 20] loss 0.1057  acc 96.20  (199s)
+  val : avg 76.56  adj 94.86  WGA 30.08 (g2)
+    landbird/land 98.7 | landbird/water 63.5 | waterbird/land 30.1 | waterbird/water 91.0
+  test: avg 76.73  adj 94.33  WGA 26.48 (g2)
+    landbird/land 99.1 | landbird/water 65.7 | waterbird/land 26.5 | waterbird/water 87.1
+
+==============================================================
+best checkpoint (epoch 20) 의 테스트 성능, 실제 sparsity 0.9500
+==============================================================
+avg 76.73  adj 94.33  WGA 26.48 (g2)
+    landbird/land 99.1 | landbird/water 65.7 | waterbird/land 26.5 | waterbird/water 87.1
+원본 정확도 76.73% (5794장)
+BFR_opp 0.4034  BFR_same 0.1591  S 0.2443 (95% CI 이미지 0.2328 ~ 0.2560, 이미지+배경 0.2230 ~ 0.2673)
+  landbird/land    n= 2255  opp 0.3533  same 0.0147  S 0.3385
+  landbird/water   n= 2255  opp 0.3359  same 0.2984  S 0.0375
+  waterbird/land   n=  642  opp 0.6293  same 0.1950  S 0.4343
+  waterbird/water  n=  642  opp 0.5910  same 0.1411  S 0.4498
+  landbird/land|wrong      n=   20  opp 0.2500  same 0.9500
+  landbird/land|correct    n= 2235  opp 0.3542  same 0.0064
+  landbird/water|wrong     n=  773  opp 0.9757  same 0.4251
+  landbird/water|correct   n= 1482  opp 0.0022  same 0.2323
+  waterbird/land|wrong     n=  472  opp 0.8521  same 0.1441
+  waterbird/land|correct   n=  170  opp 0.0106  same 0.3365
+  waterbird/water|wrong    n=   83  opp 0.0361  same 0.6169
+  waterbird/water|correct  n=  559  opp 0.6733  same 0.0705
+=== 완료 ===

@@ -1,0 +1,16 @@
+{
+  "ckpt": "/data/jwook2480/xai_project/runs/erm_seed2/best.pt",
+  "wb_root": "/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2",
+  "out_dir": "/data/jwook2480/xai_project/runs/prune_sp50_seed2",
+  "sparsity": 0.5,
+  "epochs": 20,
+  "batch_size": 128,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "momentum": 0.9,
+  "num_workers": 8,
+  "seed": 2,
+  "eval_every": 2,
+  "amp": true,
+  "subset": 0
+}
