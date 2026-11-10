@@ -29,6 +29,8 @@ Attribution map 은 별도 도구가 아니라 *압축된 모델 자신의* grad
   *기각 조건*: 모든 sparsity 에서 `S` 변화가 seed 표준편차 2배 이내.
 - **H2 (설명)**: attribution 은 낮은 sparsity 에서는 `S` 를 따라가지만 높은 sparsity 에서 어긋난다.
   *기각 조건*: 최대 sparsity 의 tracking AUROC 가 dense 모델의 95% bootstrap CI 안에 있음.
+- 2026-11-10 에 H1 판정 방법을 구체화하고 H2 를 H2a/H2b 로 나눴다. **현재 기준은 §4 "2026-11-10 결정 사항"** 이다.
+  위 원래 문구는 제안서 기록용으로 남긴다.
 
 **일정**
 - 11월 말: 최종 발표
@@ -74,10 +76,32 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 ```
 `M` = 새 영역 마스크. Zhou et al. (AAAI 2022) 의 `1 - Attr%(M)` 에 해당.
 
+- `Attr_bg_band`: 마스크 경계 ±3px 띠를 분자·분모 모두에서 뺀 값 (경계 번짐 대응)
+- 마스크는 224 해상도에서 >0.5 로 이진화한다.
+- 집중도 `C = (1 − Attr_bg) / area` (`area` = 새 면적 비율). 균일 맵이면 1.
+
+**이미지별 행동 지표 Δp (attribution 미사용, 2026-11-10 추가)**
+```
+Δp(x) = mean p(waterbird | 물 배경 반사실 5장) − mean p(waterbird | 땅 배경 반사실 5장)
+```
+- `p` 는 softmax 의 waterbird 확률. 원본 사진은 쓰지 않는다.
+- `place=water` 이미지는 `x_same` 이 물 배경, `x_opp` 가 땅 배경이다. `place=land` 는 반대다.
+- 배경 타입이 예측을 얼마나 미는지를 이미지마다 연속값으로 준다. flip 과 달리 원래 정오답과 무관하게 정의된다.
+
+**H1 지표**: `S`, `d_correct`, `d_wrong`, 평균 `Δp`. ft0 대비 seed 별 짝지은 차이 + 짝지은 bootstrap CI (§4 2026-11-10).
+
 **추적성 (RQ 의 직접적 답)**
-- *모델 단위*: 압축 모델들에 걸친 `mean(Attr_bg)` 와 `S` 의 Spearman 순위 상관
-- *이미지 단위*: `Attr_bg(x)` 로 "x 가 반대 배경에서 실제로 뒤집히는가" 를 예측한 **AUROC**
-  (0.5 = 무작위, 1 = 완벽). sparsity 에 따라 이 값이 떨어지는지가 H2 의 핵심 판정.
+- **H2a (모델 안 추적)**: 주 지표 = 새 면적을 통제한 **부분 Spearman ρ(Attr_bg, Δp | area)**.
+  `rank(Attr_bg)` 와 `rank(Δp)` 를 각각 `rank(area)` 에 선형회귀한 잔차끼리의 Pearson.
+  보조 = 원시 Spearman ρ(Attr_bg, Δp), AUROC(정답 = `Δp ≥ 0.10`, 점수 = `Attr_bg`), `C` 로 계산한 같은 지표.
+  `area` 는 `Attr_bg` 와 `Δp` 양쪽에 영향을 주는 교란변수라 통제한다.
+- **H2b (행동이 같은 모델 간 설명 비교)**: 이미지별 `|Attr_bg(sparsity, seed s) − Attr_bg(ft0, seed s)|` 를
+  잡음 기준 `|Attr_bg(ft0, seed a) − Attr_bg(ft0, seed b)|` 와 짝지은 bootstrap 으로 비교한다.
+- *모델 단위* `mean(Attr_bg)` 와 `S` 의 Spearman 은 참고용으로만 낸다. 정확도 유지 구간에서 `S` 변동이
+  잡음 수준이라 순위가 안정되지 않는다 (WORKLOG 2026-11-03 (2)).
+- ~~이미지 단위: `Attr_bg(x)` 로 "x 가 반대 배경에서 뒤집히는가" 를 예측한 AUROC~~ — **2026-11-10 주 지표에서 내림.**
+  원래 맞은 소수 그룹 사진(테스트의 약 41%)은 반대 배경이 곧 라벨과 일치하는 배경이라, 배경에 의존하더라도
+  예측이 뒤집힐 수 없다 (dense opp flip 0.05~0.5%). 이 사진들의 정답이 모두 "안 뒤집힘" 으로 찍혀 정답표가 틀린다.
 
 ---
 
@@ -89,9 +113,10 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 | 1 | dense ERM 기준 모델 학습 | **1회 실행, 재현 전 (2026-10-28)** — seed 0·1 통과, seed 2 는 avg 89.59 로 확인 필요. avg 90.00±0.39 / WGA 66.25±3.90 / 격차 23.75pt |
 | 2 | 반사실 이미지 생성 + `S` 측정 | **dense 1회 측정, 재현 전 (2026-11-03)** — S 0.081 (seed 0.079·0.080·0.085), 배경 400장 풀. `WORKLOG.md` 참고 |
 | 3 | pruning 파이프라인 | **1회 실행, 재현 전 (2026-11-03)** — sparsity 0~95% × seed 3. 정확도 유지 구간(≤70%)에서 S 변화는 H1 기준 이내. `results/pruning_k5.md` |
-| 4 | attribution (Grad-CAM/IG/RISE) + `Attr_bg` | **미착수** |
-| 5 | 추적성 분석 (Spearman, AUROC) | **미착수** |
-| 6 | stress test S1~S5 | **미착수** |
+| 3+ | 반사실 확률 저장 + `Δp` + H1 재판정 (ft0 대비, 짝지은 bootstrap) | **계획 확정 (2026-11-10)**, 미착수 |
+| 4 | attribution — 모델 15개 (dense, ft0, 30/50/70% × seed 3). Grad-CAM·IG 는 테스트 5,794장, RISE 는 1,000장. `Attr_bg`, `Attr_bg_band`, `C`, Grad-CAM 7×7 | **계획 확정 (2026-11-10)**, 미착수 |
+| 5 | 추적성 분석 — H2a (부분 Spearman ρ(Attr_bg, Δp \| area)), H2b (ft0 대비 이미지별 변화 vs seed 간 잡음) | **계획 확정 (2026-11-10)**, 미착수 |
+| 6 | stress test — ST-A fine-tuning 5 epoch, ST-B 마스크 띠·Grad-CAM 7×7, ST-C IG blur baseline | **계획 확정 (2026-11-10)**, 미착수 |
 
 STEP 1 과 STEP 2 는 병렬로 진행 가능하다. STEP 2 가 이 프로젝트의 핵심 장치이자
 구현 난이도가 가장 높으므로 일찍 시작할 것.
@@ -127,8 +152,54 @@ ERM 표준 프로토콜대로 평균 기준으로 고른다.
 - **pruning 프로토콜:** Conv/Linear 가중치 전역 magnitude one-shot pruning 후 마스크를 고정하고
   ERM 과 같은 설정으로 20 epoch fine-tuning. 모델 선택은 validation 평균 정확도.
   sparsity 0 도 같은 fine-tuning 을 거쳐 대조군(ft0)으로 쓴다.
-- **미결정:** H1 의 `S` 변화를 dense 대비로 볼지 ft0 대비로 볼지. 결과를 본 뒤에 남은 결정이므로
-  보고서에는 두 기준을 모두 싣는다.
+- ~~**미결정:** H1 의 `S` 변화를 dense 대비로 볼지 ft0 대비로 볼지.~~ → 2026-11-10 ft0 대비로 확정.
+  결과를 본 뒤에 내린 결정이므로 보고서에는 두 기준을 모두 싣고, 결정 시점을 밝힌다.
+
+### 2026-11-10 결정 사항 (STEP 4 전 분석 계획 확정)
+
+STEP 3 에서 정확도 유지 구간(≤70%)의 `S` 가 변하지 않아 H2 분석 계획을 바꾼다. **보고서에 "STEP 3 결과에 따른
+분석 계획 변경" 으로 명시한다.**
+
+1. **H1 비교 기준은 ft0 대비 (seed 별로 짝지음).** dense 대비는 함께 보고만 한다.
+   이유: fine-tuning 만으로 `S` 가 +0.0047 움직여, dense 대비는 자르기 효과와 fine-tuning 효과가 섞인다.
+   70% 이하에서는 어느 기준이든 결론이 같아 기준 선택이 결론을 고르지 않는다.
+2. **H1 판정.** 제안서 기준(dense `S` 의 seed 표준편차 2배, 0.0069)은 **실질 크기 기준**으로 두고,
+   **짝지은 bootstrap 95% CI** 를 추가한다. 이미지와 배경을 두 모델에 같은 인덱스로 재표본한다
+   (모든 모델이 같은 반사실 사진을 쓰므로 짝지은 비교가 된다).
+   **CI 가 0 을 포함하지 않고 |Δ| 가 실질 크기 기준 이상일 때만 "변했다"** 고 판정한다.
+   지표는 `S`, `d_correct`, `d_wrong`, 평균 `Δp`. `S` 는 정확도에 끌려가므로 단독으로 쓰지 않는다.
+   `d_correct`·`d_wrong`·`Δp` 의 실질 크기 기준도 같은 규칙(dense seed 표준편차 2배)으로 정한다.
+3. **Δp 정의.** 이미지마다 `Δp = mean p(waterbird | 물 배경 반사실 5장) − mean p(waterbird | 땅 배경 반사실 5장)`.
+   원본 사진은 쓰지 않는다. `place=water` 이미지는 same 이 물 배경, opp 가 땅 배경이고 `place=land` 는 반대다.
+4. **H2 를 두 갈래로 나눈다.**
+   - **H2a**: 각 모델 안에서 `Attr_bg` 가 `Δp` 를 추적하는가, 압축하면 추적이 약해지는가.
+     주 지표 = 새 면적을 통제한 부분 Spearman ρ(Attr_bg, Δp | area).
+     보조 = 원시 Spearman, AUROC(정답 = `Δp ≥ 0.10`).
+     **판정: 70% 의 주 지표가 ft0 의 95% bootstrap CI 밖이고 seed 3개 중 2개 이상이 같은 방향이면 지지.**
+   - **H2b**: 행동이 같은 모델끼리 히트맵이 같은가.
+     같은 seed 의 (70% − ft0) 이미지별 `Attr_bg` 차이가, 같은 sparsity 의 seed 간 차이(ft0 seed a vs seed b)보다
+     큰지 짝지은 bootstrap 으로 본다. 크면 **"행동은 같은데 설명이 바뀌었다"**.
+     해당 sparsity 의 H1 판정이 "변함" 이면 H2b 해석에서 뺀다.
+   - 기존 §2 의 "반대 배경 flip 을 예측하는 AUROC" 는 **주 지표에서 내린다.** 원래 맞은 소수 그룹 사진
+     (테스트의 약 41%)은 반대 배경이 라벨과 일치하는 배경이라 배경에 의존해도 flip 이 구조적으로 거의 0 이다
+     (dense 0.05~0.5%). 이 사진들이 모두 "배경 안 씀" 으로 찍혀 정답표가 틀린다. `Δp` 는 이 문제가 없다.
+5. **STEP 4 대상 모델: dense, ft0(`prune_sp00`), `prune_sp30`, `sp50`, `sp70` × seed 0,1,2 = 15개.**
+   80% 는 seed 0 이 정확도 기준으로 제외돼 짝지은 비교가 깨지므로 넣지 않는다.
+6. **설명 대상은 원본 사진의 예측 클래스 margin (`z_pred − z_other`).** RISE 는 예측 클래스 확률.
+   이진 분류에서 어느 클래스를 설명하느냐에 따른 비대칭을 없앤다.
+7. **방법별 설정.**
+   - Grad-CAM: `model.layer4` 출력, ReLU, 224 로 bilinear 업샘플한 맵을 주로 쓴다 (§5 함정 8 고정).
+     7×7 에서 마스크를 면적 평균으로 줄인 버전도 함께 저장한다 (stress test 용).
+   - IG: 검정 이미지(픽셀 0 을 정규화한 값) baseline, 50 step. completeness 상대오차 중앙값이 5% 를 넘으면 100 step.
+   - RISE: 7×7 격자, p=0.5, 마스크 2,000개, 고정 시드로 모든 모델이 같은 마스크를 쓴다.
+8. **이미지.** Grad-CAM·IG 는 테스트 5,794장 전부. RISE 는 그룹당 250장, 고정 시드로 뽑은 1,000장
+   (비용: 약 9 GPU-시간, 8장 병렬로 약 1.5시간).
+9. **마스크.** 224 해상도 이진 마스크(>0.5). 경계 ±3px 띠를 분자·분모에서 모두 뺀 `Attr_bg_band` 도 계산한다.
+10. **stress test 는 세 가지만 한다.**
+    - ST-A: fine-tuning 5 epoch (재학습이 shortcut 변화를 되돌리는지 직접 확인)
+    - ST-B: 마스크 경계 띠 제외 / Grad-CAM 7×7 (재계산만)
+    - ST-C: IG blur baseline
+    100% 상관 데이터, 구조적 pruning, 85% 는 하지 않고 보고서 한계에 적는다.
 
 ### 양자화는 메인에서 제외
 PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 attribution 계산이 막힌다.
@@ -173,6 +244,7 @@ PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 att
    마지막 conv 의 7×7 맵이라 새/배경 경계가 흐려진다.
    `Attr_bg` 계산 시 마스크를 7×7 로 내리는 방식과 맵을 224 로 올리는 방식의 결과가 달라질 수 있다.
    **한 가지로 고정하고 보고서에 명시할 것.**
+   → 2026-11-10 **224 bilinear 업샘플로 고정**. 7×7 버전은 stress test(ST-B)용으로 함께 저장한다.
 
 9. **`sbatch` 는 `dirname $0` 을 못 쓴다** ★2026-10-28 확인
    제출된 스크립트는 `/var/spool/slurm/d/jobNNN/slurm_script` 로 **복사되어** 실행된다.
