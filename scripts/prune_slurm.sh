@@ -45,6 +45,6 @@ for SP in $SPARSITIES; do
   "$PY" measure_shortcut.py \
       --ckpt "$PROJ/runs/$RUN/best.pt" --wb_root "$WB_ROOT" \
       --cf_dir "$LOCAL_ROOT/cf/k5" --out "$PROJ/runs/$RUN/shortcut_k5.json" \
-      --expect_avg_acc "$EXPECT" --seed "$SEED"
+      --expect_avg_acc "$EXPECT" --seed "$SEED" --save_probs
 done
 echo "=== 완료 ==="
