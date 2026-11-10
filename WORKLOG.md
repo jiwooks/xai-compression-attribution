@@ -5,6 +5,96 @@
 
 ---
 
+## 2026-11-10 (2) — 반사실 확률 저장 + Δp + H1 재판정
+
+### 한 줄 요약
+
+ft0 대비, 정확도 유지 구간(≤70%)에서는 `S`, `d_correct`, `d_wrong`, 평균 `Δp` **네 지표 모두 "변함 없음"** 이다.
+다만 새 지표 평균 `Δp` 는 sparsity 에 따라 단조에 가깝게 오르고, 70% 에서 CI 가 0 을 벗어나며(+0.0114) 실질 크기
+기준(0.0135)에 조금 못 미친다. 80%(seed 1, 2)는 평균 `Δp` 가 +0.0226 으로 "변함" 이다. 재현 전 수치다.
+
+### 실행 방법
+
+```bash
+cd /data/$USER/xai_project && mkdir -p logs
+# 회귀 확인 (srun, seed 0 dense 하나)
+srun -p debug_ugrad --gres=gpu:1 --cpus-per-gpu=8 --mem-per-gpu=32G -t 0:30:00 \
+     bash scripts/remeasure_slurm.sh 0 "erm" </dev/null
+# 본 실행 — 잡 3개, 각 약 16분 (모델 8개 × 2분)
+for s in 0 1 2; do sbatch --exclude=aurora-g2,aurora-g5,aurora-g6 scripts/remeasure_slurm.sh $s; done
+# 분석 — GPU 없는 잡은 CPU 1개만 허용된다
+srun -p debug_ugrad --ntasks=1 --cpus-per-task=1 --mem=16G -t 0:30:00 \
+     /data/$USER/miniconda3/envs/xai/bin/python analyze_h1.py --out results/h1_k5.md
+```
+
+### 바뀐 코드
+
+- `measure_shortcut.py`: `predict()` 가 waterbird softmax 확률도 돌려준다 (flip 은 그대로 argmax).
+  결과 JSON 에 `dp` (전체·그룹별·그룹×정오답별 평균 Δp) 추가.
+  `--save_probs` → `shortcut_k5_rows.csv.gz` (반사실 행별 p_w, flip), `shortcut_k5_dp.csv.gz` (이미지별 Δp, 원본 p_w).
+  `--regress_check <기존 JSON>` → S·BFR·그룹별·CI 값이 하나라도 다르면 저장하지 않고 멈춘다.
+- `scripts/remeasure_slurm.sh`: seed 하나의 erm + prune_sp00~95 를 재측정 (회귀 확인 포함).
+- `scripts/prune_slurm.sh`: 측정에 `--save_probs` 추가 (P4 ST-A 에서 쓴다).
+- `scripts/stage_cf.sh`: 완료 표식을 NAS tar 확인보다 먼저 본다 (아래 데이터 문제 참고).
+- `analyze_h1.py`: 짝지은 two-way bootstrap (이미지 + 배경 타입별 층화, 모든 모델 같은 가중치, 2,000회).
+
+### 회귀 확인
+
+**24개 모델 전부 통과.** 기존 `shortcut_k5.json` 의 S, BFR_opp, BFR_same, 그룹별 값, 이미지/two-way CI,
+`by_group_and_orig_correct`, 원본 정확도가 1e-12 안에서 같다. git diff 도 `dp` 항목 추가(삽입만)뿐이다.
+`analyze_h1.py` 의 점추정은 JSON 의 S·평균 Δp, `summarize_pruning.decompose` 의 d_correct·d_wrong 와 일치한다.
+
+### ★ 데이터 문제: NAS 의 `/data/$USER/datasets/xai/` 가 없어졌다
+
+11-03 까지 있던 tar(Waterbirds, CUB, segmentations, Places 배경, 반사실 k5)가 폴더째 사라졌다. 상위 폴더 수정 시각은
+11-06 12:46. 계산 노드 g1, g3, g4, g7, g8 의 `/local_datasets/$USER/xai` 에는 완료 표식과 함께 전부 남아 있어
+(반사실 57,940장, segmentations 200 폴더) 이번 실행은 그 노드에만 걸었다(`--exclude=aurora-g2,aurora-g5,aurora-g6`).
+g5 는 Waterbirds·CUB 만 있고 반사실·배경이 없다. **로컬 디스크는 언제 지워질지 모르므로 NAS tar 복구가 필요하다.**
+
+### 결과 (seed 3개, 전체는 `results/h1_k5.md`)
+
+실질 크기 기준 (dense seed 표준편차 × 2): S 0.0069, d_correct 0.0045, d_wrong 0.0138, 평균 Δp 0.0135.
+
+모델별 평균 Δp: dense 0.1846 / ft0 0.1946 / 30% 0.1966 / 50% 0.1949 / 70% 0.2060 / 80% 0.2236 / 90% 0.2438 / 95% 0.3736
+
+**ft0 대비 (주 판정, seed 합산, Δ [95% CI])**
+
+| 모델 | 포함 seed | ΔS | Δd_correct | Δd_wrong | Δ평균 Δp | 판정 |
+|---|---|---|---|---|---|---|
+| 30% | 0,1,2 | +0.0007 [−0.0022, +0.0034] | +0.0004 [−0.0017, +0.0025] | +0.0064 [−0.0045, +0.0177] | +0.0020 [+0.0007, +0.0032] | 변함 없음 |
+| 50% | 0,1,2 | −0.0035 [−0.0085, +0.0014] | −0.0016 [−0.0054, +0.0019] | −0.0092 [−0.0293, +0.0112] | +0.0003 [−0.0029, +0.0037] | 변함 없음 |
+| 70% | 0,1,2 | −0.0006 [−0.0081, +0.0070] | +0.0009 [−0.0047, +0.0067] | −0.0233 [−0.0525, +0.0076] | +0.0114 [+0.0056, +0.0174] | 변함 없음 |
+| 80% | 1,2 | +0.0024 [−0.0073, +0.0119] | +0.0022 [−0.0055, +0.0098] | −0.0339 [−0.0703, +0.0025] | **+0.0226 [+0.0137, +0.0311]** | 변함: 평균 Δp |
+
+90%, 95% 는 세 seed 모두 정확도 기준으로 제외된다 (seed 별로는 S·d_correct·Δp 모두 "변함").
+
+### 해석
+
+- **H1 (ft0 대비) 은 정확도 유지 구간에서 기각 쪽이다.** 네 지표 모두 판정 규칙을 넘지 않는다. STEP 3 의 결론과 같다.
+- **평균 Δp 가 S 보다 민감하다.** S 는 70% 까지 평평하지만 Δp 는 50% → 70% → 80% 로 오른다.
+  70% 는 CI 가 0 을 벗어나지만 크기가 기준의 84% 이고, seed 별로 +0.026 / +0.011 / −0.003 으로 갈린다.
+  경계선 결과로 보고하고, "변함" 으로 쓰지 않는다.
+- 70% 의 Δp 상승은 원래 틀린 다수 그룹(landbird/land 오답 0.38 → 0.53, 4~8장)과 원래 맞은 landbird 이미지
+  (land 0.167 → 0.183, water 0.127 → 0.143)에서 온다. waterbird 쪽은 거의 그대로다.
+- **dense 대비(참고)는 70% 의 평균 Δp 가 "변함"(+0.0214)** 이다. ft0 와 dense 의 차이(+0.0100) 만큼 fine-tuning 효과가 섞인다.
+  기준 선택이 70% Δp 판정을 가른다는 점을 보고서에 적는다 (11-10 결정 1 의 "결론이 같다" 는 S 기준에서만 맞다).
+- Δp 는 flip 이 못 보는 곳도 잡는다. 원래 맞은 landbird/water 사진은 opp flip 이 0.0005 인데 Δp 는 +0.11~+0.13 이다.
+
+### 한계
+
+- 재현 전. 실질 크기 기준은 seed 3개로 추정한 표준편차라 불안정하다.
+- 80% 합산은 seed 1, 2 둘뿐이다 (seed 0 은 정확도 기준 제외).
+- d_wrong 은 원래 틀린 이미지(약 10%)만 쓰므로 CI 가 넓다.
+- bootstrap 은 이미지·배경 재표본만 반영한다. 학습 seed 의 변동은 실질 크기 기준으로만 들어간다.
+
+### 다음에 할 일
+
+- [ ] NAS 의 데이터 tar 복구 (노드 로컬 사본에서 다시 묶거나 다시 받기)
+- [ ] STEP 4 attribution (P2)
+- [ ] STEP 2·3+ 재현
+
+---
+
 ## 2026-11-10 — 분석 계획 확정
 
 ### 한 줄 요약

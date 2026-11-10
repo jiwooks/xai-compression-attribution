@@ -159,5 +159,25 @@
       "BFR_opp": 0.2803252032520325,
       "BFR_same": 0.028617886178861792
     }
+  },
+  "dp": {
+    "definition": "mean p(waterbird|water bg cf) - mean p(waterbird|land bg cf), per image",
+    "overall": 0.19283616542816162,
+    "groups": {
+      "landbird/land": 0.16624583303928375,
+      "landbird/water": 0.17005372047424316,
+      "waterbird/land": 0.29167142510414124,
+      "waterbird/water": 0.26742085814476013
+    },
+    "by_group_and_orig_correct": {
+      "landbird/land|wrong": 0.3399185538291931,
+      "landbird/land|correct": 0.1658598929643631,
+      "landbird/water|wrong": 0.40442490577697754,
+      "landbird/water|correct": 0.12582342326641083,
+      "waterbird/land|wrong": 0.5965285897254944,
+      "waterbird/land|correct": 0.1496831476688385,
+      "waterbird/water|wrong": 0.3865514397621155,
+      "waterbird/water|correct": 0.2621907591819763
+    }
   }
 }

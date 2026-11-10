@@ -1,0 +1,165 @@
+=== job 121019 | node aurora-g7 | seed 2 | runs erm prune_sp00 prune_sp30 prune_sp50 prune_sp70 prune_sp80 prune_sp90 prune_sp95 ===
+==> node=aurora-g7  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+[skip] places_val_bg.tar 이미 펼쳐져 있음
+[skip] counterfactuals_k5.tar 이미 펼쳐져 있음
+
+########## erm_seed2 ##########
+원본 정확도 89.59% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/erm_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/erm_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/erm_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.1828  BFR_same 0.0977  S 0.0852 (95% CI 이미지 0.0775 ~ 0.0929, 이미지+배경 0.0723 ~ 0.0979)
+  landbird/land    n= 2255  opp 0.1479  same 0.0038  S 0.1441
+  landbird/water   n= 2255  opp 0.1462  same 0.1806  S -0.0344
+  waterbird/land   n=  642  opp 0.3318  same 0.1829  S 0.1489
+  waterbird/water  n=  642  opp 0.2854  same 0.0508  S 0.2346
+  landbird/land|wrong      n=    6  opp 0.5000  same 0.8000  Δp +0.3203
+  landbird/land|correct    n= 2249  opp 0.1470  same 0.0017  Δp +0.1588
+  landbird/water|wrong     n=  333  opp 0.9850  same 0.5934  Δp +0.3974
+  landbird/water|correct   n= 1922  opp 0.0008  same 0.1091  Δp +0.1228
+  waterbird/land|wrong     n=  234  opp 0.9060  same 0.2829  Δp +0.6062
+  waterbird/land|correct   n=  408  opp 0.0025  same 0.1255  Δp +0.1400
+  waterbird/water|wrong    n=   30  opp 0.0267  same 0.4467  Δp +0.4252
+  waterbird/water|correct  n=  612  opp 0.2980  same 0.0314  Δp +0.2736
+평균 Δp +0.1910
+
+########## prune_sp00_seed2 ##########
+원본 정확도 88.99% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/prune_sp00_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/prune_sp00_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/prune_sp00_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.1937  BFR_same 0.1031  S 0.0905 (95% CI 이미지 0.0825 ~ 0.0986, 이미지+배경 0.0771 ~ 0.1042)
+  landbird/land    n= 2255  opp 0.1669  same 0.0063  S 0.1606
+  landbird/water   n= 2255  opp 0.1705  same 0.1954  S -0.0249
+  waterbird/land   n=  642  opp 0.3000  same 0.1798  S 0.1202
+  waterbird/water  n=  642  opp 0.2629  same 0.0427  S 0.2202
+  landbird/land|wrong      n=   11  opp 0.3818  same 0.8364  Δp +0.4633
+  landbird/land|correct    n= 2244  opp 0.1659  same 0.0022  Δp +0.1784
+  landbird/water|wrong     n=  389  opp 0.9841  same 0.5589  Δp +0.4212
+  landbird/water|correct   n= 1866  opp 0.0009  same 0.1196  Δp +0.1340
+  waterbird/land|wrong     n=  210  opp 0.9095  same 0.2895  Δp +0.6039
+  waterbird/land|correct   n=  432  opp 0.0037  same 0.1264  Δp +0.1351
+  waterbird/water|wrong    n=   28  opp 0.0286  same 0.4643  Δp +0.4245
+  waterbird/water|correct  n=  614  opp 0.2736  same 0.0235  Δp +0.2560
+평균 Δp +0.2025
+
+########## prune_sp30_seed2 ##########
+원본 정확도 89.11% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/prune_sp30_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/prune_sp30_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/prune_sp30_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.1940  BFR_same 0.1032  S 0.0908 (95% CI 이미지 0.0829 ~ 0.0988, 이미지+배경 0.0771 ~ 0.1044)
+  landbird/land    n= 2255  opp 0.1712  same 0.0058  S 0.1654
+  landbird/water   n= 2255  opp 0.1701  same 0.1974  S -0.0273
+  waterbird/land   n=  642  opp 0.2913  same 0.1741  S 0.1171
+  waterbird/water  n=  642  opp 0.2611  same 0.0439  S 0.2171
+  landbird/land|wrong      n=   10  opp 0.4400  same 0.8200  Δp +0.4211
+  landbird/land|correct    n= 2245  opp 0.1700  same 0.0021  Δp +0.1819
+  landbird/water|wrong     n=  388  opp 0.9851  same 0.5577  Δp +0.4256
+  landbird/water|correct   n= 1867  opp 0.0007  same 0.1225  Δp +0.1372
+  waterbird/land|wrong     n=  206  opp 0.9019  same 0.2777  Δp +0.6067
+  waterbird/land|correct   n=  436  opp 0.0028  same 0.1252  Δp +0.1367
+  waterbird/water|wrong    n=   27  opp 0.0296  same 0.4519  Δp +0.4095
+  waterbird/water|correct  n=  615  opp 0.2712  same 0.0260  Δp +0.2548
+평균 Δp +0.2047
+
+########## prune_sp50_seed2 ##########
+원본 정확도 89.44% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/prune_sp50_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/prune_sp50_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/prune_sp50_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.1879  BFR_same 0.1014  S 0.0865 (95% CI 이미지 0.0785 ~ 0.0945, 이미지+배경 0.0727 ~ 0.0996)
+  landbird/land    n= 2255  opp 0.1601  same 0.0058  S 0.1543
+  landbird/water   n= 2255  opp 0.1592  same 0.1901  S -0.0309
+  waterbird/land   n=  642  opp 0.2978  same 0.1869  S 0.1109
+  waterbird/water  n=  642  opp 0.2763  same 0.0405  S 0.2358
+  landbird/land|wrong      n=   11  opp 0.4545  same 0.8909  Δp +0.4731
+  landbird/land|correct    n= 2244  opp 0.1586  same 0.0014  Δp +0.1707
+  landbird/water|wrong     n=  363  opp 0.9857  same 0.5752  Δp +0.4118
+  landbird/water|correct   n= 1892  opp 0.0006  same 0.1162  Δp +0.1311
+  waterbird/land|wrong     n=  211  opp 0.8957  same 0.2844  Δp +0.5873
+  waterbird/land|correct   n=  431  opp 0.0051  same 0.1392  Δp +0.1532
+  waterbird/water|wrong    n=   27  opp 0.0296  same 0.3333  Δp +0.3375
+  waterbird/water|correct  n=  615  opp 0.2872  same 0.0276  Δp +0.2666
+평균 Δp +0.1983
+
+########## prune_sp70_seed2 ##########
+원본 정확도 89.44% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/prune_sp70_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/prune_sp70_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/prune_sp70_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.1866  BFR_same 0.1045  S 0.0822 (95% CI 이미지 0.0741 ~ 0.0903, 이미지+배경 0.0688 ~ 0.0961)
+  landbird/land    n= 2255  opp 0.1622  same 0.0054  S 0.1568
+  landbird/water   n= 2255  opp 0.1501  same 0.1907  S -0.0406
+  waterbird/land   n=  642  opp 0.3140  same 0.1925  S 0.1215
+  waterbird/water  n=  642  opp 0.2735  same 0.0617  S 0.2118
+  landbird/land|wrong      n=    9  opp 0.3556  same 0.8444  Δp +0.4946
+  landbird/land|correct    n= 2246  opp 0.1614  same 0.0020  Δp +0.1722
+  landbird/water|wrong     n=  344  opp 0.9808  same 0.5843  Δp +0.3970
+  landbird/water|correct   n= 1911  opp 0.0005  same 0.1198  Δp +0.1362
+  waterbird/land|wrong     n=  224  opp 0.8920  same 0.3009  Δp +0.5681
+  waterbird/land|correct   n=  418  opp 0.0043  same 0.1344  Δp +0.1580
+  waterbird/water|wrong    n=   35  opp 0.0229  same 0.5200  Δp +0.4728
+  waterbird/water|correct  n=  607  opp 0.2880  same 0.0353  Δp +0.2633
+평균 Δp +0.1998
+
+########## prune_sp80_seed2 ##########
+원본 정확도 88.33% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/prune_sp80_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/prune_sp80_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/prune_sp80_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.2028  BFR_same 0.1156  S 0.0872 (95% CI 이미지 0.0785 ~ 0.0958, 이미지+배경 0.0733 ~ 0.1019)
+  landbird/land    n= 2255  opp 0.1852  same 0.0087  S 0.1765
+  landbird/water   n= 2255  opp 0.1784  same 0.2187  S -0.0404
+  waterbird/land   n=  642  opp 0.2963  same 0.1829  S 0.1134
+  waterbird/water  n=  642  opp 0.2570  same 0.0614  S 0.1956
+  landbird/land|wrong      n=   11  opp 0.2182  same 0.8727  Δp +0.6130
+  landbird/land|correct    n= 2244  opp 0.1850  same 0.0045  Δp +0.1954
+  landbird/water|wrong     n=  409  opp 0.9790  same 0.5731  Δp +0.4068
+  landbird/water|correct   n= 1846  opp 0.0010  same 0.1402  Δp +0.1590
+  waterbird/land|wrong     n=  214  opp 0.8850  same 0.2776  Δp +0.5746
+  waterbird/land|correct   n=  428  opp 0.0019  same 0.1355  Δp +0.1558
+  waterbird/water|wrong    n=   42  opp 0.0571  same 0.5190  Δp +0.4540
+  waterbird/water|correct  n=  600  opp 0.2710  same 0.0293  Δp +0.2541
+평균 Δp +0.2186
+
+########## prune_sp90_seed2 ##########
+원본 정확도 85.62% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/prune_sp90_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/prune_sp90_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/prune_sp90_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.2400  BFR_same 0.1232  S 0.1168 (95% CI 이미지 0.1079 ~ 0.1254, 이미지+배경 0.1014 ~ 0.1332)
+  landbird/land    n= 2255  opp 0.2075  same 0.0107  S 0.1968
+  landbird/water   n= 2255  opp 0.2118  same 0.2276  S -0.0158
+  waterbird/land   n=  642  opp 0.3673  same 0.1925  S 0.1748
+  waterbird/water  n=  642  opp 0.3262  same 0.0826  S 0.2436
+  landbird/land|wrong      n=   15  opp 0.2000  same 0.8133  Δp +0.5683
+  landbird/land|correct    n= 2240  opp 0.2076  same 0.0054  Δp +0.2233
+  landbird/water|wrong     n=  487  opp 0.9729  same 0.5318  Δp +0.4229
+  landbird/water|correct   n= 1768  opp 0.0021  same 0.1438  Δp +0.1732
+  waterbird/land|wrong     n=  279  opp 0.8351  same 0.2308  Δp +0.5366
+  waterbird/land|correct   n=  363  opp 0.0077  same 0.1631  Δp +0.1828
+  waterbird/water|wrong    n=   52  opp 0.0538  same 0.5423  Δp +0.4447
+  waterbird/water|correct  n=  590  opp 0.3502  same 0.0420  Δp +0.3092
+평균 Δp +0.2490
+
+########## prune_sp95_seed2 ##########
+원본 정확도 76.73% (5794장)
+[회귀 확인 통과] /data/jwook2480/xai_project/runs/prune_sp95_seed2/.shortcut_k5.prev.json 와 S·BFR·그룹별·CI 값이 모두 같다.
+저장: /data/jwook2480/xai_project/runs/prune_sp95_seed2/shortcut_k5_rows.csv.gz, /data/jwook2480/xai_project/runs/prune_sp95_seed2/shortcut_k5_dp.csv.gz
+BFR_opp 0.4034  BFR_same 0.1591  S 0.2443 (95% CI 이미지 0.2328 ~ 0.2560, 이미지+배경 0.2230 ~ 0.2673)
+  landbird/land    n= 2255  opp 0.3533  same 0.0147  S 0.3385
+  landbird/water   n= 2255  opp 0.3359  same 0.2984  S 0.0375
+  waterbird/land   n=  642  opp 0.6293  same 0.1950  S 0.4343
+  waterbird/water  n=  642  opp 0.5910  same 0.1411  S 0.4498
+  landbird/land|wrong      n=   20  opp 0.2500  same 0.9500  Δp +0.5581
+  landbird/land|correct    n= 2235  opp 0.3542  same 0.0064  Δp +0.3341
+  landbird/water|wrong     n=  773  opp 0.9757  same 0.4251  Δp +0.4830
+  landbird/water|correct   n= 1482  opp 0.0022  same 0.2323  Δp +0.2534
+  waterbird/land|wrong     n=  472  opp 0.8521  same 0.1441  Δp +0.5988
+  waterbird/land|correct   n=  170  opp 0.0106  same 0.3365  Δp +0.3319
+  waterbird/water|wrong    n=   83  opp 0.0361  same 0.6169  Δp +0.5097
+  waterbird/water|correct  n=  559  opp 0.6733  same 0.0705  Δp +0.5270
+평균 Δp +0.3767
+=== 완료 ===
