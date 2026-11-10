@@ -115,7 +115,7 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 | 3 | pruning 파이프라인 | **1회 실행, 재현 전 (2026-11-03)** — sparsity 0~95% × seed 3. 정확도 유지 구간(≤70%)에서 S 변화는 H1 기준 이내. `results/pruning_k5.md` |
 | 3+ | 반사실 확률 저장 + `Δp` + H1 재판정 (ft0 대비, 짝지은 bootstrap) | **1회 실행, 재현 전 (2026-11-10)** — 24개 모델 회귀 확인 통과. ft0 대비 ≤70% 는 네 지표 모두 "변함 없음". 평균 Δp 는 70% +0.011 (CI 0 미포함, 기준 0.0135 미달), 80% +0.023 (변함). `results/h1_k5.md` |
 | 4 | attribution — 모델 15개 (dense, ft0, 30/50/70% × seed 3). Grad-CAM·IG 는 테스트 5,794장, RISE 는 1,000장. `Attr_bg`, `Attr_bg_band`, `C`, Grad-CAM 7×7, RISE centered | **1회 실행, 재현 전 (2026-11-10)** — 45개(15 모델 × 3 방법) 완료. sanity 통과(Grad-CAM −0.01, IG 0.39, RISE centered 0.00). IG 200 step, completeness 0.9~2.2%. 평균 Attr_bg 는 세 방법 모두 70% 에서 낮아진다 (새 쪽 이동). `WORKLOG.md` |
-| 5 | 추적성 분석 — H2a (부분 Spearman ρ(Attr_bg, Δp \| area)), H2b (ft0 대비 이미지별 변화 vs seed 간 잡음) | **계획 확정 (2026-11-10)**, 미착수 |
+| 5 | 추적성 분석 — H2a (부분 Spearman ρ(Attr_bg, Δp \| area)), H2b (ft0 대비 이미지별 변화 vs seed 간 잡음) | **1회 실행, 재현 전 (2026-11-10)** — H2a 세 방법 모두 지지 안 됨 (RISE 는 70% 에서 추적 강화). H2b 70% 세 방법 모두 "행동은 같은데 설명이 바뀌었다" (새 쪽, 잡음의 1.7~3.5배). `results/attribution_k5.md` |
 | 6 | stress test — ST-A fine-tuning 5 epoch, ST-B 마스크 띠·Grad-CAM 7×7, ST-C IG blur baseline | **계획 확정 (2026-11-10)**, 미착수 |
 
 STEP 1 과 STEP 2 는 병렬로 진행 가능하다. STEP 2 가 이 프로젝트의 핵심 장치이자
@@ -295,9 +295,11 @@ PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 att
 16. **GPU 없는 잡은 CPU 1개만 받는다** ★2026-11-10 확인
     `--cpus-per-task=4` 로 CPU 잡을 내면 `SUBMISSION REJECTED` 가 난다. `--ntasks=1 --cpus-per-task=1` 로 낸다.
 
-17. **NAS 데이터 tar 가 없어졌다** ★2026-11-10 확인
-    `/data/$USER/datasets/xai/` 가 통째로 없다 (11-06 경). g1, g3, g4, g7, g8 의 `/local_datasets` 에는 남아 있어
-    `--exclude=aurora-g2,aurora-g5,aurora-g6` 로 잡을 건다. 복구 전까지는 새 노드에서 스테이징이 실패한다.
+17. **NAS 데이터 tar 가 없어졌다 → 복구함** ★2026-11-10
+    `/data/$USER/datasets/xai/` 가 통째로 없어졌다 (11-06 경, 원인 미상). g1 의 `/local_datasets` 사본에서
+    `scripts/restore_nas_tars.sh` 로 tar 5개를 원래 구조대로 다시 묶었다 (다시 풀어 파일 목록·크기 일치 확인).
+    **공식 배포 tarball 과 바이트 단위로 같지는 않다.** 정기적으로 `ls /data/$USER/datasets/xai` 로 있는지 확인할 것.
+    복구 전 잡은 `--exclude=aurora-g2,aurora-g5,aurora-g6` 로 데이터가 남은 노드에만 걸었다.
 
 ---
 
@@ -318,6 +320,7 @@ measure_shortcut.py     STEP 2. BFR, S 측정. --save_probs 로 반사실 확률
 prune_finetune.py       STEP 3. 전역 magnitude pruning + fine-tuning
 summarize_pruning.py    STEP 3. sparsity 별 정확도·S 요약표 (numpy 만 필요)
 analyze_h1.py           STEP 3+. H1 재판정 — ft0/dense 대비 짝지은 two-way bootstrap (numpy/pandas)
+analyze_h2.py           STEP 5. H2a(부분 Spearman 추적)·H2b(변화량 vs seed 잡음) 채점, results/figs (numpy/pandas/scipy/matplotlib)
 compute_attribution.py  STEP 4. Grad-CAM / IG / RISE 이미지별 Attr_bg, RISE 목록 생성, 가중치 무작위화 sanity
 scripts/
   _common.sh            잡 스크립트 공통 경로·캐시 설정
@@ -336,6 +339,7 @@ scripts/
   remeasure_slurm.sh    학습된 모델들의 반사실 확률 재측정 + 회귀 확인 (sbatch)
   attr_slurm.sh         seed 하나의 모델 목록에 attribution 계산 (sbatch)
   attr_sanity_slurm.sh  가중치 무작위화 sanity (sbatch)
+  restore_nas_tars.sh   노드 로컬 사본에서 NAS 데이터 tar 다시 만들기 (srun/sbatch)
 results/                요약표 (git 추적)
 data_check/             STEP 0 결과. overlay 이미지만 git 추적
 runs/                   실행 산출물. args.json, log.csv, final_test.json, shortcut_*.json,
