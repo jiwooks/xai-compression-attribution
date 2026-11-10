@@ -1,0 +1,54 @@
+{
+  "method": "rise",
+  "n_images": 1000,
+  "acc": 0.859,
+  "n_nan_attr_bg": 0,
+  "n_area0": 0,
+  "overall": {
+    "attr_bg": 0.8269356489181519,
+    "attr_bg_band": 0.8528936505317688,
+    "attr_bg_centered": 0.6421457529067993,
+    "C": 1.0242044925689697,
+    "area": 0.16959714889526367
+  },
+  "groups": {
+    "landbird/land": {
+      "attr_bg": 0.8468137383460999,
+      "attr_bg_band": 0.8723283410072327,
+      "attr_bg_centered": 0.6742780804634094,
+      "C": 0.9994338154792786,
+      "area": 0.15345367789268494
+    },
+    "landbird/water": {
+      "attr_bg": 0.8145303726196289,
+      "attr_bg_band": 0.8400837779045105,
+      "attr_bg_centered": 0.6043769717216492,
+      "C": 1.047394037246704,
+      "area": 0.17851132154464722
+    },
+    "waterbird/land": {
+      "attr_bg": 0.8196816444396973,
+      "attr_bg_band": 0.8457539677619934,
+      "attr_bg_centered": 0.6062307357788086,
+      "C": 1.0412815809249878,
+      "area": 0.17415566742420197
+    },
+    "waterbird/water": {
+      "attr_bg": 0.8267168998718262,
+      "attr_bg_band": 0.8534086346626282,
+      "attr_bg_centered": 0.6836973428726196,
+      "C": 1.0087083578109741,
+      "area": 0.17226792871952057
+    }
+  },
+  "rise_masks": 2000,
+  "rise_seed": 0,
+  "rise_grid": 7,
+  "rise_p": 0.5,
+  "ckpt": "/data/jwook2480/xai_project/runs/prune_sp70_seed1/best.pt",
+  "images": "rise1000",
+  "subset": 0,
+  "seconds": 698.6,
+  "n_pred_mismatch_vs_measure": 0,
+  "pred_mismatch_p_w_orig": []
+}

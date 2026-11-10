@@ -114,7 +114,7 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 | 2 | 반사실 이미지 생성 + `S` 측정 | **dense 1회 측정, 재현 전 (2026-11-03)** — S 0.081 (seed 0.079·0.080·0.085), 배경 400장 풀. `WORKLOG.md` 참고 |
 | 3 | pruning 파이프라인 | **1회 실행, 재현 전 (2026-11-03)** — sparsity 0~95% × seed 3. 정확도 유지 구간(≤70%)에서 S 변화는 H1 기준 이내. `results/pruning_k5.md` |
 | 3+ | 반사실 확률 저장 + `Δp` + H1 재판정 (ft0 대비, 짝지은 bootstrap) | **1회 실행, 재현 전 (2026-11-10)** — 24개 모델 회귀 확인 통과. ft0 대비 ≤70% 는 네 지표 모두 "변함 없음". 평균 Δp 는 70% +0.011 (CI 0 미포함, 기준 0.0135 미달), 80% +0.023 (변함). `results/h1_k5.md` |
-| 4 | attribution — 모델 15개 (dense, ft0, 30/50/70% × seed 3). Grad-CAM·IG 는 테스트 5,794장, RISE 는 1,000장. `Attr_bg`, `Attr_bg_band`, `C`, Grad-CAM 7×7 | **계획 확정 (2026-11-10)**, 미착수 |
+| 4 | attribution — 모델 15개 (dense, ft0, 30/50/70% × seed 3). Grad-CAM·IG 는 테스트 5,794장, RISE 는 1,000장. `Attr_bg`, `Attr_bg_band`, `C`, Grad-CAM 7×7, RISE centered | **1회 실행, 재현 전 (2026-11-10)** — 45개(15 모델 × 3 방법) 완료. sanity 통과(Grad-CAM −0.01, IG 0.39, RISE centered 0.00). IG 200 step, completeness 0.9~2.2%. 평균 Attr_bg 는 세 방법 모두 70% 에서 낮아진다 (새 쪽 이동). `WORKLOG.md` |
 | 5 | 추적성 분석 — H2a (부분 Spearman ρ(Attr_bg, Δp \| area)), H2b (ft0 대비 이미지별 변화 vs seed 간 잡음) | **계획 확정 (2026-11-10)**, 미착수 |
 | 6 | stress test — ST-A fine-tuning 5 epoch, ST-B 마스크 띠·Grad-CAM 7×7, ST-C IG blur baseline | **계획 확정 (2026-11-10)**, 미착수 |
 
@@ -200,6 +200,20 @@ STEP 3 에서 정확도 유지 구간(≤70%)의 `S` 가 변하지 않아 H2 분
     - ST-B: 마스크 경계 띠 제외 / Grad-CAM 7×7 (재계산만)
     - ST-C: IG blur baseline
     100% 상관 데이터, 구조적 pruning, 85% 는 하지 않고 보고서 한계에 적는다.
+
+### 2026-11-10 추가 결정 (STEP 4 실행 중)
+
+11. **RISE 의 주 지표는 centered 맵의 `Attr_bg` 로 바꾼다.** (사전 계획 변경 — 보고서에 명시)
+    가중치 무작위화 sanity 에서 원래 정의(raw)의 Spearman 중앙값이 0.805 로 멈춤 기준 0.5 를 넘었다.
+    RISE 맵 Σ p_i M_i / (N p) 에 모든 모델이 공유하는 `p̄ × 마스크 합 패턴` 이 깔려 있기 때문이다.
+    이 패턴을 뺀 centered 맵 Σ (p_i − p̄) M_i / (N p) 은 0.004 로 통과한다. raw 는 보조로 함께 보고한다.
+    CSV 열: `attr_bg_centered` (주), `attr_bg` (raw, 보조).
+12. **IG 는 15개 모델 모두 200 step 으로 통일한다.** (사전 계획 변경)
+    결정 7 의 규칙(50 → 100 step)대로 돌리니 50 step 중앙값이 3.8~9.6% 로, 13개는 100 step, sp70 seed1·2 는 50 step 으로
+    step 수가 섞였고, 100 step 에서도 erm_seed1 6.09%, prune_sp00_seed1 6.13% 가 5% 를 넘었다 (멈춤 조건).
+    모델 간 비교 조건을 같게 하려고 전부 200 step 으로 다시 계산한다. 100 step 결과는 클러스터에 `attr_ig_s100.*` 로 보관.
+13. **원본 예측 대조는 이미지별로 한다.** 배치 크기 차이로 결정 경계(p_w ≈ 0.5002)의 사진 1장이 바뀌는 경우가 있어
+    정확도 완전 일치 대신 `measure_shortcut` 의 원본 예측과 이미지별로 맞추고 5장까지 허용한다.
 
 ### 양자화는 메인에서 제외
 PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 attribution 계산이 막힌다.
@@ -304,6 +318,7 @@ measure_shortcut.py     STEP 2. BFR, S 측정. --save_probs 로 반사실 확률
 prune_finetune.py       STEP 3. 전역 magnitude pruning + fine-tuning
 summarize_pruning.py    STEP 3. sparsity 별 정확도·S 요약표 (numpy 만 필요)
 analyze_h1.py           STEP 3+. H1 재판정 — ft0/dense 대비 짝지은 two-way bootstrap (numpy/pandas)
+compute_attribution.py  STEP 4. Grad-CAM / IG / RISE 이미지별 Attr_bg, RISE 목록 생성, 가중치 무작위화 sanity
 scripts/
   _common.sh            잡 스크립트 공통 경로·캐시 설정
   setup_env.sh          conda 환경 xai 생성 (계산 노드에서 실행)
@@ -319,10 +334,12 @@ scripts/
   measure_shortcut_slurm.sh  S 측정 (sbatch)
   prune_slurm.sh        seed 하나의 sparsity 목록을 pruning + fine-tuning + S·Δp 측정 (sbatch)
   remeasure_slurm.sh    학습된 모델들의 반사실 확률 재측정 + 회귀 확인 (sbatch)
+  attr_slurm.sh         seed 하나의 모델 목록에 attribution 계산 (sbatch)
+  attr_sanity_slurm.sh  가중치 무작위화 sanity (sbatch)
 results/                요약표 (git 추적)
 data_check/             STEP 0 결과. overlay 이미지만 git 추적
 runs/                   실행 산출물. args.json, log.csv, final_test.json, shortcut_*.json,
-                        shortcut_*_rows.csv.gz, shortcut_*_dp.csv.gz 만 git 추적
+                        shortcut_*_rows.csv.gz, shortcut_*_dp.csv.gz, attr_{gradcam,ig,rise}.* 만 git 추적
 logs/                   SLURM 출력. erm-*.out, shortcut-*.out, prune-*.out, remeasure-*.out 만 git 추적
 ```
 

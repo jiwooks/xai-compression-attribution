@@ -1,0 +1,35 @@
+=== job 121049 | node aurora-g3 | seed 1 | ig | prune_sp50 prune_sp70 ===
+NVIDIA GeForce RTX 3090, 24576 MiB
+==> node=aurora-g3  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+
+########## prune_sp50_seed1 / ig ##########
+ig: /data/jwook2480/xai_project/runs/prune_sp50_seed1/best.pt  이미지 5794장
+IG 50 step completeness 상대오차 중앙값 0.0586
+IG 100 step 재계산: 중앙값 0.0282
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 89.94%  Attr_bg 0.6248  band 0.6483  area 0.1672  (1280.7s)
+  landbird/land    Attr_bg 0.5892  C 2.902
+  landbird/water   Attr_bg 0.6739  C 2.236
+  waterbird/land   Attr_bg 0.5481  C 3.013
+  waterbird/water  Attr_bg 0.6539  C 2.217
+저장: /data/jwook2480/xai_project/runs/prune_sp50_seed1/attr_ig.csv.gz, /data/jwook2480/xai_project/runs/prune_sp50_seed1/attr_ig.json
+
+########## prune_sp70_seed1 / ig ##########
+ig: /data/jwook2480/xai_project/runs/prune_sp70_seed1/best.pt  이미지 5794장
+IG 50 step completeness 상대오차 중앙값 0.0382
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 89.37%  Attr_bg 0.6120  band 0.6338  area 0.1672  (441.3s)
+  landbird/land    Attr_bg 0.5703  C 3.058
+  landbird/water   Attr_bg 0.6679  C 2.288
+  waterbird/land   Attr_bg 0.5258  C 3.175
+  waterbird/water  Attr_bg 0.6484  C 2.264
+저장: /data/jwook2480/xai_project/runs/prune_sp70_seed1/attr_ig.csv.gz, /data/jwook2480/xai_project/runs/prune_sp70_seed1/attr_ig.json
+=== 완료 ===

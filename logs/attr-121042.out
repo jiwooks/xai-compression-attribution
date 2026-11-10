@@ -1,0 +1,62 @@
+=== job 121042 | node aurora-g1 | seed 0 | gradcam | erm prune_sp00 prune_sp30 prune_sp50 prune_sp70 ===
+NVIDIA GeForce RTX 3090, 24576 MiB
+==> node=aurora-g1  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+
+########## erm_seed0 / gradcam ##########
+gradcam: /data/jwook2480/xai_project/runs/erm_seed0/best.pt  이미지 5794장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 90.37%  Attr_bg 0.6527  band 0.6724  7x7 0.6453  area 0.1672  (11.4s)
+  landbird/land    Attr_bg 0.6894  C 2.086
+  landbird/water   Attr_bg 0.5917  C 2.696
+  waterbird/land   Attr_bg 0.6576  C 2.041
+  waterbird/water  Attr_bg 0.7336  C 1.605
+저장: /data/jwook2480/xai_project/runs/erm_seed0/attr_gradcam.csv.gz, /data/jwook2480/xai_project/runs/erm_seed0/attr_gradcam.json
+
+########## prune_sp00_seed0 / gradcam ##########
+gradcam: /data/jwook2480/xai_project/runs/prune_sp00_seed0/best.pt  이미지 5794장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 89.94%  Attr_bg 0.6546  band 0.6742  7x7 0.6471  area 0.1672  (9.7s)
+  landbird/land    Attr_bg 0.6905  C 2.078
+  landbird/water   Attr_bg 0.5968  C 2.659
+  waterbird/land   Attr_bg 0.6534  C 2.084
+  waterbird/water  Attr_bg 0.7323  C 1.614
+저장: /data/jwook2480/xai_project/runs/prune_sp00_seed0/attr_gradcam.csv.gz, /data/jwook2480/xai_project/runs/prune_sp00_seed0/attr_gradcam.json
+
+########## prune_sp30_seed0 / gradcam ##########
+gradcam: /data/jwook2480/xai_project/runs/prune_sp30_seed0/best.pt  이미지 5794장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 89.94%  Attr_bg 0.6536  band 0.6732  7x7 0.6462  area 0.1672  (9.0s)
+  landbird/land    Attr_bg 0.6890  C 2.089
+  landbird/water   Attr_bg 0.5959  C 2.670
+  waterbird/land   Attr_bg 0.6540  C 2.082
+  waterbird/water  Attr_bg 0.7318  C 1.619
+저장: /data/jwook2480/xai_project/runs/prune_sp30_seed0/attr_gradcam.csv.gz, /data/jwook2480/xai_project/runs/prune_sp30_seed0/attr_gradcam.json
+
+########## prune_sp50_seed0 / gradcam ##########
+gradcam: /data/jwook2480/xai_project/runs/prune_sp50_seed0/best.pt  이미지 5794장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 90.11%  Attr_bg 0.6480  band 0.6673  7x7 0.6404  area 0.1672  (10.0s)
+  landbird/land    Attr_bg 0.6826  C 2.126
+  landbird/water   Attr_bg 0.5915  C 2.701
+  waterbird/land   Attr_bg 0.6464  C 2.122
+  waterbird/water  Attr_bg 0.7267  C 1.658
+저장: /data/jwook2480/xai_project/runs/prune_sp50_seed0/attr_gradcam.csv.gz, /data/jwook2480/xai_project/runs/prune_sp50_seed0/attr_gradcam.json
+
+########## prune_sp70_seed0 / gradcam ##########
+gradcam: /data/jwook2480/xai_project/runs/prune_sp70_seed0/best.pt  이미지 5794장
+measure_shortcut 원본 예측과 다른 이미지 1장 (p_w_orig [0.5002])
+정확도 89.11%  Attr_bg 0.6274  band 0.6443  7x7 0.6186  area 0.1672  (9.1s)
+  landbird/land    Attr_bg 0.6517  C 2.332
+  landbird/water   Attr_bg 0.5778  C 2.771
+  waterbird/land   Attr_bg 0.6300  C 2.238
+  waterbird/water  Attr_bg 0.7133  C 1.747
+저장: /data/jwook2480/xai_project/runs/prune_sp70_seed0/attr_gradcam.csv.gz, /data/jwook2480/xai_project/runs/prune_sp70_seed0/attr_gradcam.json
+=== 완료 ===
