@@ -1,0 +1,48 @@
+=== job 121048 | node aurora-g3 | seed 1 | ig | erm prune_sp00 prune_sp30 ===
+NVIDIA GeForce RTX 3090, 24576 MiB
+==> node=aurora-g3  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+
+########## erm_seed1 / ig ##########
+ig: /data/jwook2480/xai_project/runs/erm_seed1/best.pt  이미지 5794장
+IG 50 step completeness 상대오차 중앙값 0.0748
+IG 100 step 재계산: 중앙값 0.0609
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 90.04%  Attr_bg 0.6287  band 0.6528  area 0.1672  (1281.7s)
+  landbird/land    Attr_bg 0.5981  C 2.829
+  landbird/water   Attr_bg 0.6748  C 2.230
+  waterbird/land   Attr_bg 0.5531  C 2.965
+  waterbird/water  Attr_bg 0.6495  C 2.241
+저장: /data/jwook2480/xai_project/runs/erm_seed1/attr_ig.csv.gz, /data/jwook2480/xai_project/runs/erm_seed1/attr_ig.json
+
+########## prune_sp00_seed1 / ig ##########
+ig: /data/jwook2480/xai_project/runs/prune_sp00_seed1/best.pt  이미지 5794장
+IG 50 step completeness 상대오차 중앙값 0.0737
+IG 100 step 재계산: 중앙값 0.0613
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 89.75%  Attr_bg 0.6300  band 0.6542  area 0.1672  (1283.6s)
+  landbird/land    Attr_bg 0.5991  C 2.821
+  landbird/water   Attr_bg 0.6765  C 2.217
+  waterbird/land   Attr_bg 0.5535  C 2.961
+  waterbird/water  Attr_bg 0.6511  C 2.229
+저장: /data/jwook2480/xai_project/runs/prune_sp00_seed1/attr_ig.csv.gz, /data/jwook2480/xai_project/runs/prune_sp00_seed1/attr_ig.json
+
+########## prune_sp30_seed1 / ig ##########
+ig: /data/jwook2480/xai_project/runs/prune_sp30_seed1/best.pt  이미지 5794장
+IG 50 step completeness 상대오차 중앙값 0.0698
+IG 100 step 재계산: 중앙값 0.0340
+measure_shortcut 원본 예측과 다른 이미지 1장 (p_w_orig [0.4993])
+정확도 89.85%  Attr_bg 0.6290  band 0.6531  area 0.1672  (1285.6s)
+  landbird/land    Attr_bg 0.5980  C 2.830
+  landbird/water   Attr_bg 0.6758  C 2.223
+  waterbird/land   Attr_bg 0.5519  C 2.974
+  waterbird/water  Attr_bg 0.6502  C 2.238
+저장: /data/jwook2480/xai_project/runs/prune_sp30_seed1/attr_ig.csv.gz, /data/jwook2480/xai_project/runs/prune_sp30_seed1/attr_ig.json
+=== 완료 ===

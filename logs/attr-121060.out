@@ -1,0 +1,32 @@
+=== job 121060 | node aurora-g7 | seed 2 | rise | prune_sp50 prune_sp70 ===
+NVIDIA GeForce RTX 3090, 24576 MiB
+==> node=aurora-g7  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+
+########## prune_sp50_seed2 / rise ##########
+rise: /data/jwook2480/xai_project/runs/prune_sp50_seed2/best.pt  이미지 1000장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 85.10%  Attr_bg 0.8273  band 0.8533  area 0.1696  (694.0s)
+  landbird/land    Attr_bg 0.8472  C 0.996
+  landbird/water   Attr_bg 0.8190  C 1.018
+  waterbird/land   Attr_bg 0.8178  C 1.057
+  waterbird/water  Attr_bg 0.8252  C 1.019
+저장: /data/jwook2480/xai_project/runs/prune_sp50_seed2/attr_rise.csv.gz, /data/jwook2480/xai_project/runs/prune_sp50_seed2/attr_rise.json
+
+########## prune_sp70_seed2 / rise ##########
+rise: /data/jwook2480/xai_project/runs/prune_sp70_seed2/best.pt  이미지 1000장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 85.70%  Attr_bg 0.8269  band 0.8529  area 0.1696  (693.1s)
+  landbird/land    Attr_bg 0.8471  C 0.997
+  landbird/water   Attr_bg 0.8162  C 1.037
+  waterbird/land   Attr_bg 0.8184  C 1.050
+  waterbird/water  Attr_bg 0.8258  C 1.014
+저장: /data/jwook2480/xai_project/runs/prune_sp70_seed2/attr_rise.csv.gz, /data/jwook2480/xai_project/runs/prune_sp70_seed2/attr_rise.json
+=== 완료 ===

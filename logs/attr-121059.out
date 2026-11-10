@@ -1,0 +1,42 @@
+=== job 121059 | node aurora-g7 | seed 2 | rise | erm prune_sp00 prune_sp30 ===
+NVIDIA GeForce RTX 3090, 24576 MiB
+==> node=aurora-g7  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+
+########## erm_seed2 / rise ##########
+rise: /data/jwook2480/xai_project/runs/erm_seed2/best.pt  이미지 1000장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 84.60%  Attr_bg 0.8277  band 0.8536  area 0.1696  (698.9s)
+  landbird/land    Attr_bg 0.8472  C 0.996
+  landbird/water   Attr_bg 0.8192  C 1.016
+  waterbird/land   Attr_bg 0.8189  C 1.045
+  waterbird/water  Attr_bg 0.8253  C 1.018
+저장: /data/jwook2480/xai_project/runs/erm_seed2/attr_rise.csv.gz, /data/jwook2480/xai_project/runs/erm_seed2/attr_rise.json
+
+########## prune_sp00_seed2 / rise ##########
+rise: /data/jwook2480/xai_project/runs/prune_sp00_seed2/best.pt  이미지 1000장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 85.20%  Attr_bg 0.8275  band 0.8535  area 0.1696  (697.3s)
+  landbird/land    Attr_bg 0.8472  C 0.996
+  landbird/water   Attr_bg 0.8184  C 1.020
+  waterbird/land   Attr_bg 0.8187  C 1.049
+  waterbird/water  Attr_bg 0.8256  C 1.016
+저장: /data/jwook2480/xai_project/runs/prune_sp00_seed2/attr_rise.csv.gz, /data/jwook2480/xai_project/runs/prune_sp00_seed2/attr_rise.json
+
+########## prune_sp30_seed2 / rise ##########
+rise: /data/jwook2480/xai_project/runs/prune_sp30_seed2/best.pt  이미지 1000장
+measure_shortcut 원본 예측과 다른 이미지 0장 (p_w_orig [])
+정확도 85.40%  Attr_bg 0.8275  band 0.8535  area 0.1696  (697.0s)
+  landbird/land    Attr_bg 0.8472  C 0.996
+  landbird/water   Attr_bg 0.8183  C 1.023
+  waterbird/land   Attr_bg 0.8186  C 1.052
+  waterbird/water  Attr_bg 0.8257  C 1.015
+저장: /data/jwook2480/xai_project/runs/prune_sp30_seed2/attr_rise.csv.gz, /data/jwook2480/xai_project/runs/prune_sp30_seed2/attr_rise.json
+=== 완료 ===

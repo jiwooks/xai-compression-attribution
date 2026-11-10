@@ -5,6 +5,133 @@
 
 ---
 
+## 2026-11-10 (3) — STEP 4 attribution (Grad-CAM / IG / RISE)
+
+### 한 줄 요약
+
+모델 15개 × 방법 3개의 이미지별 `Attr_bg` 를 계산했다. sanity check 를 통과했고(RISE 는 centered 맵으로),
+**세 방법 모두 70% 에서 평균 `Attr_bg` 가 낮아진다**(히트맵이 새 쪽으로 이동). 같은 70% 에서 행동 지표 평균 `Δp` 는
+약간 올랐으므로 방향이 반대다. 판정은 STEP 5 (H2a·H2b) 에서 한다. 재현 전 수치다.
+
+### 실행 방법
+
+```bash
+cd /data/$USER/xai_project && mkdir -p logs
+X="--exclude=aurora-g2,aurora-g5,aurora-g6"          # NAS tar 유실로 데이터가 남은 노드만 (CLAUDE.md §5-17)
+# RISE 이미지 목록 (CPU 1개)
+srun -p debug_ugrad $X --ntasks=1 --cpus-per-task=1 --mem=4G -t 0:10:00 \
+     bash -c 'source scripts/_common.sh && $PY compute_attribution.py --make_rise_list --wb_root $WB_ROOT'
+# 점검: dense seed 0, 64장, png 저장
+srun -p debug_ugrad $X --gres=gpu:1 --cpus-per-gpu=8 --mem-per-gpu=32G -t 1:00:00 bash -c \
+  'for m in gradcam ig rise; do EXTRA="--subset 64 --png_dir data_check/attr_smoke --n_png 6" OUT_SUFFIX=_smoke bash scripts/attr_slurm.sh 0 erm $m; done'
+# 본 실행
+M5="erm prune_sp00 prune_sp30 prune_sp50 prune_sp70"
+for s in 0 1 2; do sbatch $X scripts/attr_slurm.sh $s "$M5" gradcam; done                 # 모델당 약 10초
+for s in 0 1 2; do for R in "erm prune_sp00" "prune_sp30 prune_sp50" "prune_sp70"; do
+  EXTRA="--ig_steps 200" sbatch $X scripts/attr_slurm.sh $s "$R" ig; done; done           # 모델당 약 28분
+for s in 0 1 2; do for R in "erm prune_sp00 prune_sp30" "prune_sp50 prune_sp70"; do
+  sbatch $X scripts/attr_slurm.sh $s "$R" rise; done; done                                 # 모델당 약 12분
+sbatch $X scripts/attr_sanity_slurm.sh 0 200                                              # 가중치 무작위화
+```
+
+### 설정 (CLAUDE.md §4 2026-11-10 결정 6~9, 추가 결정 11~13)
+
+- 설명 대상: 원본 사진의 예측 클래스 margin `z_pred − z_other`. RISE 는 예측 클래스 확률.
+- Grad-CAM: `layer4` 출력, 공간 평균 gradient 가중, ReLU, 224 bilinear 업샘플(주). 7×7 은 마스크를 면적 평균으로 줄여 가중.
+- IG: 검정 baseline(픽셀 0 을 정규화), 중점 Riemann **200 step** (아래 경위), 채널별 |attr| 합.
+- RISE: 7×7 격자, p=0.5, 마스크 2,000개(시드 0, 모든 모델 공통), 업샘플 후 랜덤 시프트, 가린 곳은 검정, fp16 forward.
+  **주 지표는 centered 맵** Σ(p_i − p̄)M_i/(N·p) 의 `Attr_bg` (`attr_bg_centered`). raw 는 보조.
+- 마스크: CUB segmentation 을 이미지와 같은 기하(Resize 256 → CenterCrop 224, NEAREST)로 바꾼 뒤 >0.5.
+  이미지와 마스크 전처리의 기하 변환이 같은 것을 코드에서 확인했다 (보간만 bilinear / nearest 로 다름).
+- 경계 띠: 마스크 팽창 − 침식 (7×7 max-pool, ±3px). 분자·분모에서 모두 뺀다.
+- RISE 이미지: `results/rise_images.csv`, 그룹당 250장 (pandas `groupby.sample`, random_state=0).
+- 새 면적이 0 인 이미지, `Attr_bg` 가 NaN 인 이미지는 45개 결과 모두 0장이다.
+
+### 점검
+
+**스모크 테스트** (dense seed 0, 64장): `data_check/attr_smoke/` 의 png 18장. 세 방법 모두 새 몸통에 집중하고
+마스크 윤곽이 새와 맞는다. RISE raw 맵은 전체에 약 0.9 의 바닥값이 깔려 있다.
+
+**가중치 무작위화 sanity** (Adebayo et al. 2018, dense seed 0, 200장, `results/attr_sanity_erm_seed0.json`)
+— 원래 모델 맵과 모든 가중치를 새로 초기화한 모델 맵의 이미지별 Spearman (동순위는 평균 순위)
+
+| 방법 | 중앙값 | IQR | 판정 (기준 0.5) |
+|---|---|---|---|
+| Grad-CAM | −0.012 | −0.160 ~ 0.124 | 통과 |
+| IG | 0.391 | 0.326 ~ 0.471 | 통과. 검정 baseline IG 는 `(x − x′)` 가 곱해져 사진 윤곽이 남는다 (알려진 성질, 한계에 기재) |
+| RISE raw | **0.805** | 0.295 ~ 0.999 | **실패** |
+| RISE centered | 0.004 | −0.058 ~ 0.098 | 통과 |
+
+RISE raw 실패 원인: 모든 모델이 같은 마스크를 쓰므로 맵에 `p̄ × Σ M_i / (N p)` 패턴이 공유된다. 무작위 모델은
+출력이 거의 상수라 맵이 이 패턴 자체가 되고, 원래 모델 맵에도 같은 패턴이 바닥값으로 깔린다.
+패턴을 정확히 뺀 centered 맵에서 0.004 가 된 것으로 확인했다. → 사용자 결정으로 centered 를 주 지표로 (추가 결정 11).
+
+**IG completeness**: 처음 규칙(50 step, 중앙값 > 5% 면 100 step)대로 돌리니 50 step 중앙값 3.8~9.6% 로 step 수가 섞였고
+(13개 100 step, sp70 seed1·2 는 50 step), 100 step 에서도 erm_seed1 6.09%, prune_sp00_seed1 6.13% 가 기준을 넘었다.
+→ 사용자 결정으로 **전부 200 step** (추가 결정 12). 200 step 중앙값 **0.9~2.2%** 로 15개 모두 통과.
+100 step 과 200 step 의 평균 `Attr_bg` 차이는 0.0002 이하였다. 100 step 결과는 클러스터에 `attr_ig_s100.*` 로 보관.
+
+**원본 예측 대조**: 이미지별로 `measure_shortcut` 의 원본 예측(p_w_orig > 0.5)과 맞췄다. 45개 중 5개 결과에서 1장씩 다르고,
+모두 p_w_orig 가 0.4993~0.5005 인 결정 경계 사진이다. 배치 크기 차이(64·4 vs 256)에 따른 수치 차이로 본다.
+처음에는 정확도 완전 일치를 요구해 Grad-CAM 3개가 멈췄다 → 이미지별 대조, 5장 허용으로 바꿨다 (추가 결정 13).
+
+### 처리 시간 (RTX 3090 1장)
+
+| 방법 | 이미지 | 모델당 | 15개 합계 |
+|---|---|---|---|
+| Grad-CAM | 5,794 | 약 9초 | 약 2분 |
+| IG 200 step | 5,794 | 약 27.5분 | 약 6.9 GPU-시간 (잡 9개 병렬, 실제 약 56분) |
+| RISE 2,000 마스크 | 1,000 | 약 11.7분 | 약 2.9 GPU-시간 (잡 6개 병렬, 실제 약 40분) |
+
+계획(RISE 약 9 GPU-시간)보다 RISE 가 3배 빨랐다 (fp16, 마스크 배치 500).
+
+### 결과 — 평균 Attr_bg (seed 평균 ± 표준편차)
+
+균일한 맵이면 `1 − area` = 0.833 (전체), 0.830 (RISE 1,000장). 이보다 낮을수록 새를 본다.
+
+| 모델 | Grad-CAM | Grad-CAM band | Grad-CAM 7×7 | IG | IG band | RISE centered (주) | RISE raw |
+|---|---|---|---|---|---|---|---|
+| dense | 0.6554 ± 0.0029 | 0.6752 ± 0.0031 | 0.6481 ± 0.0031 | 0.6323 ± 0.0033 | 0.6564 ± 0.0034 | 0.6531 ± 0.0033 | 0.8275 ± 0.0002 |
+| ft0 | 0.6572 ± 0.0023 | 0.6769 ± 0.0025 | 0.6499 ± 0.0025 | 0.6325 ± 0.0023 | 0.6567 ± 0.0023 | 0.6538 ± 0.0026 | 0.8275 ± 0.0001 |
+| 30% | 0.6562 ± 0.0023 | 0.6760 ± 0.0024 | 0.6489 ± 0.0025 | 0.6314 ± 0.0022 | 0.6555 ± 0.0022 | 0.6536 ± 0.0026 | 0.8275 ± 0.0000 |
+| 50% | 0.6505 ± 0.0026 | 0.6701 ± 0.0028 | 0.6431 ± 0.0028 | 0.6268 ± 0.0018 | 0.6502 ± 0.0018 | 0.6523 ± 0.0024 | 0.8273 ± 0.0001 |
+| **70%** | **0.6257 ± 0.0015** | 0.6427 ± 0.0015 | 0.6169 ± 0.0016 | **0.6158 ± 0.0034** | 0.6377 ± 0.0035 | **0.6440 ± 0.0028** | 0.8269 ± 0.0000 |
+
+그룹별 (ft0 → 70%, seed 평균; landbird/land, landbird/water, waterbird/land, waterbird/water 순)
+
+- Grad-CAM: 0.690 / 0.602 / 0.657 / 0.737 → 0.648 / 0.575 / 0.634 / 0.716 (네 그룹 모두 감소)
+- IG: 0.602 / 0.680 / 0.554 / 0.652 → 0.574 / 0.672 / 0.530 / 0.651 (land 배경 그룹에서 감소)
+- RISE centered: 0.711 / 0.635 / 0.602 / 0.666 → 0.682 / 0.614 / 0.606 / 0.674 (landbird 쪽 감소)
+
+### 해석 (예비)
+
+- 세 방법 모두 ft0 → 70% 에서 `Attr_bg` 가 0.01~0.03 낮아진다. seed 표준편차(0.002~0.003)의 약 4~15배이고 세 seed 가 같은 방향이다.
+  50% 까지는 거의 그대로다. band·7×7 변형에서도 같은 경향이다.
+- STEP 3+ 에서 같은 70% 의 행동 지표 평균 `Δp` 는 ft0 대비 +0.011 (배경 의존 쪽, 판정은 "변함 없음") 이었다.
+  **히트맵은 "배경을 덜 본다" 쪽으로, 행동은 "배경을 조금 더 쓴다" 쪽으로 움직인다.** H2b 의 핵심 비교 대상이다.
+- RISE raw 는 모델 간 차이가 0.0006 으로 거의 없다. 공유 마스크 패턴이 지배하기 때문이며 주 지표로 쓰지 않는다.
+- 이 표는 모델 평균이다. 이미지 단위 추적(H2a)과 seed 간 잡음 대비 변화(H2b)는 STEP 5 에서 판정한다.
+
+### 한계
+
+- 재현 전. sanity 는 dense seed 0 한 모델, 200장만 봤다. 무작위화는 전체 가중치 한 번(층별 점진 무작위화는 안 함).
+- IG sanity 0.39 는 기준 안이지만 0 보다 높다. IG 맵의 일부는 모델이 아니라 입력 윤곽에서 온다.
+- RISE 는 1,000장이고 주 지표가 사전 계획과 다르다 (centered). IG step 수도 사전 계획(50/100)과 다르다 (200).
+- `C` 열은 raw `Attr_bg` 기준이다. RISE centered 의 `C` 는 STEP 5 에서 `attr_bg_centered` 와 `area` 로 다시 계산한다.
+
+### 규칙 위반 기록
+
+STEP 4 준비 중 패키지 확인을 위해 **마스터 노드에서 `python -c "import sys"` 를 한 번 실행했다** (아무것도 import 하지 않음).
+이후 python 은 계산 노드(srun/sbatch)에서만 실행했다.
+
+### 다음에 할 일
+
+- [ ] STEP 5 (P3) — H2a, H2b
+- [ ] NAS 데이터 tar 복구
+- [ ] STEP 4 재현 (다른 계정, 최소 dense seed 0 의 Grad-CAM)
+
+---
+
 ## 2026-11-10 (2) — 반사실 확률 저장 + Δp + H1 재판정
 
 ### 한 줄 요약

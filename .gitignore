@@ -24,6 +24,10 @@ runs/**
 #   반사실 행별 확률·이미지별 Δp (STEP 3+, 모델당 약 1MB)
 !runs/*/shortcut_*_rows.csv.gz
 !runs/*/shortcut_*_dp.csv.gz
+#   이미지별 Attr_bg (STEP 4, 모델·방법당 약 0.3MB)
+!runs/*/attr_gradcam.*
+!runs/*/attr_ig.*
+!runs/*/attr_rise.*
 #   smoke test 산출물은 의미 없는 숫자라 제외
 runs/smoke/**
 
@@ -32,6 +36,7 @@ runs/smoke/**
 data_check/**
 !data_check/**/
 !data_check/*_overlay.jpg
+!data_check/attr_smoke/*.png
 
 # SLURM 로그
 #   학습 로그는 재현 비교용으로 추적한다. 나머지는 제외.
@@ -41,6 +46,7 @@ logs/**
 !logs/shortcut-*.out
 !logs/prune-*.out
 !logs/remeasure-*.out
+!logs/attr-*.out
 *.err
 nohup.out
 
