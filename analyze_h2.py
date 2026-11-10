@@ -50,14 +50,15 @@ SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
 
 # ---------------------------------------------------------------- 데이터
 
-def load(method):
-    """반환: DataFrame (img_id 정렬) 과 {(model, seed): (attr, C, dp)}"""
-    col = "attr_bg_centered" if method == "rise" else "attr_bg"
+def load(method, col=None, models=MODELS, seeds=SEEDS, suffix=""):
+    """반환: DataFrame (img_id 정렬) 과 {(model, seed): (attr, C, dp)}
+    col·models·suffix 는 stress test(analyze_stress.py)용. 기본값이 STEP 5 설정이다."""
+    col = col or ("attr_bg_centered" if method == "rise" else "attr_bg")
     base, per = None, {}
-    for m in MODELS:
-        for s in SEEDS:
+    for m in models:
+        for s in seeds:
             d = f"runs/{m}_seed{s}"
-            a = pd.read_csv(f"{d}/attr_{method}.csv.gz")
+            a = pd.read_csv(f"{d}/attr_{method}{suffix}.csv.gz")
             p = pd.read_csv(f"{d}/shortcut_k5_dp.csv.gz")[["img_id", "dp"]]
             t = a.merge(p, on="img_id", how="inner").sort_values("img_id").reset_index(drop=True)
             assert len(t) == len(a), f"{d}: Δp 가 없는 이미지가 있다"
@@ -118,11 +119,11 @@ def compute_h2a(base, per, sel, idx):
     return out
 
 
-def verdict_h2a(st, model, var="attr", key="partial"):
+def verdict_h2a(st, model, var="attr", key="partial", ref="prune_sp00", seeds=SEEDS):
     """결정 4 의 규칙. 반환: (판정 문자열, 바깥으로 나간 seed 별 방향 목록)"""
     dirs = []
-    for s in SEEDS:
-        lo, hi = ci(st[("prune_sp00", s, var)][key])
+    for s in seeds:
+        lo, hi = ci(st[(ref, s, var)][key])
         v = st[(model, s, var)][key][0]
         dirs.append("↓" if v < lo else ("↑" if v > hi else "·"))
     down, up = dirs.count("↓"), dirs.count("↑")
@@ -133,29 +134,29 @@ def verdict_h2a(st, model, var="attr", key="partial"):
     return "지지 안 됨", dirs
 
 
-def paired_diff(st, model, var="attr", key="partial"):
+def paired_diff(st, model, var="attr", key="partial", ref="prune_sp00", seeds=SEEDS):
     """ft0 대비 짝지은 차이. 반환: seed 별 (Δ, lo, hi) 와 seed 평균 (Δ, lo, hi)"""
     per = {}
-    for s in SEEDS:
-        d = st[(model, s, var)][key] - st[("prune_sp00", s, var)][key]
+    for s in seeds:
+        d = st[(model, s, var)][key] - st[(ref, s, var)][key]
         per[s] = (d[0], *ci(d))
-    pooled = np.mean([st[(model, s, var)][key] - st[("prune_sp00", s, var)][key] for s in SEEDS], 0)
+    pooled = np.mean([st[(model, s, var)][key] - st[(ref, s, var)][key] for s in seeds], 0)
     return per, (pooled[0], *ci(pooled))
 
 
-def compute_h2b(per, idx, sp):
+def compute_h2b(per, idx, sp, ref="prune_sp00", seeds=SEEDS):
     """반환: dict — 변화량·잡음 중앙값, 중앙값 차이 (점, CI), 평균 방향 변화 (점, CI), seed 별 중앙값"""
-    change = np.mean([np.abs(per[(sp, s)][0] - per[("prune_sp00", s)][0]) for s in SEEDS], 0)
+    change = np.mean([np.abs(per[(sp, s)][0] - per[(ref, s)][0]) for s in seeds], 0)
     pairs = [(0, 1), (0, 2), (1, 2)]
-    noise = np.mean([np.abs(per[("prune_sp00", a)][0] - per[("prune_sp00", b)][0]) for a, b in pairs], 0)
-    signed = np.mean([per[(sp, s)][0] - per[("prune_sp00", s)][0] for s in SEEDS], 0)
+    noise = np.mean([np.abs(per[(ref, a)][0] - per[(ref, b)][0]) for a, b in pairs], 0)
+    signed = np.mean([per[(sp, s)][0] - per[(ref, s)][0] for s in seeds], 0)
     dmed = np.median(change[idx], 1) - np.median(noise[idx], 1)
     dmean = signed[idx].mean(1)
     return {"change_med": float(np.median(change)), "noise_med": float(np.median(noise)),
             "dmed": (dmed[0], *ci(dmed)), "dmean": (dmean[0], *ci(dmean)),
-            "change_med_seed": [float(np.median(np.abs(per[(sp, s)][0] - per[("prune_sp00", s)][0])))
-                                for s in SEEDS],
-            "noise_med_pair": [float(np.median(np.abs(per[("prune_sp00", a)][0] - per[("prune_sp00", b)][0])))
+            "change_med_seed": [float(np.median(np.abs(per[(sp, s)][0] - per[(ref, s)][0])))
+                                for s in seeds],
+            "noise_med_pair": [float(np.median(np.abs(per[(ref, a)][0] - per[(ref, b)][0])))
                                for a, b in pairs],
             "change": change, "noise": noise}
 

@@ -5,6 +5,137 @@
 
 ---
 
+## 2026-11-10 (5) — P4 stress test (ST-A fine-tuning 길이, ST-B 측정 방식, ST-C IG baseline)
+
+### 한 줄 요약
+
+- **세 stress test 모두 핵심 결론이 유지된다.** 핵심 결론은 세 가지다.
+  - H2a: 압축해도 추적이 약해지지 않는다.
+  - H2b: 70% 에서 히트맵이 seed 간 잡음보다 크게 새 쪽으로 이동한다.
+  - H1: 재학습 후 S·평균 Δp 가 변하지 않는다.
+- **H2b 가 가장 단단하다.** 경계 띠를 빼도, 7×7 로 봐도, blur baseline 이어도, 5 epoch 재학습이어도 변화량과 이동 방향이 거의 같다.
+  - Grad-CAM 평균 Attr_bg 변화: 20ep −0.031, 5ep −0.031.
+- **새로 알게 된 것: 재학습 전(one-shot)에는 압축이 S 를 크게 올린다.**
+  - 50% 에서 +0.040, 70% 에서 +0.057 이다. 실질 크기 기준 0.0069 의 6~8배다.
+  - 5 epoch 만 재학습해도 이 증가가 사라진다.
+  - 그래서 "≤70% 에서 행동이 변하지 않는다" 는 정확히는 "재학습이 압축의 효과를 되돌린다" 이다.
+  - one-shot 은 정확도가 3~8pt 떨어져 정확도 기준 미달이다. 참고 결과로만 쓴다.
+- **세부 판정은 달라진 곳이 있다.** 5 epoch 의 Grad-CAM·IG 와 blur IG 에서 H2a 가 "지지 안 됨" 대신 "반대 (추적 강화)" 로 나온다.
+  - 어느 쪽이든 추적이 약해지지 않는다는 점은 같다.
+  - IG 는 baseline 을 바꾸면 ρ 의 부호가 바뀐다 (ft0 +0.010 → −0.095). IG 의 이미지별 Attr_bg 로 추적을 말하면 안 된다.
+
+### 실행 방법
+
+```bash
+cd /data/$USER/xai_project
+# ST-A: 5 epoch 재학습 + one-shot 저장·측정 (seed 당 약 15분)
+for s in 0 1 2; do EXTRA="--epochs 5 --eval_every 1 --save_oneshot" sbatch scripts/prune_slurm.sh $s "0 50 70" prune5ep; done
+for s in 0 1 2; do sbatch scripts/attr_slurm.sh $s "prune5ep_sp00 prune5ep_sp50 prune5ep_sp70" gradcam; done
+for s in 0 1 2; do EXTRA="--ig_steps 200" sbatch scripts/attr_slurm.sh $s "prune5ep_sp00 prune5ep_sp50 prune5ep_sp70" ig; done
+# ST-C: IG blur baseline (모델당 약 28분)
+for s in 0 1 2; do EXTRA="--ig_steps 200 --ig_baseline blur" OUT_SUFFIX=_blur sbatch scripts/attr_slurm.sh $s "prune_sp00 prune_sp70" ig; done
+# 분석 (ST-B 포함). 로컬 PC 에서 돌렸다 (약 11분). 클러스터에서는 srun CPU 1개로.
+python analyze_stress.py --out results/stress_k5.md
+```
+
+### 코드 변경
+
+- `prune_finetune.py --save_oneshot`: 재학습 전 모델을 `oneshot.pt` 로, 성능을 `oneshot_test.json` 으로 저장한다.
+  전역 magnitude pruning 은 결정적이라 같은 dense 에서 같은 one-shot 모델이 나온다.
+- `prune_slurm.sh`: `oneshot.pt` 가 있으면 `shortcut_k5_oneshot*` 로 측정한다.
+  이 측정이 실패해도 잡을 멈추지 않는다.
+- `compute_attribution.py --ig_baseline blur`: 정규화된 입력을 가우시안 σ=10px 로 흐려 baseline 으로 쓴다
+  (커널 61, reflect 패딩).
+- `analyze_h2.py`: `load`, `verdict_h2a`, `paired_diff`, `compute_h2b` 에 열·모델·기준 모델 인자를 추가했다.
+  기본값은 그대로라 STEP 5 결과가 같게 나온다. analyze_stress 의 기본 행에서 확인했다.
+- `analyze_stress.py` (새 파일): ST-A/B/C 를 analyze_h1·h2 의 함수와 판정 규칙으로 다시 판정한다.
+  판정은 두 단계다.
+  - 핵심: H2a 의 약화 여부와 H2b 결론.
+  - 세부: H2a 판정 문자열.
+
+### 결과 (전체는 `results/stress_k5.md`, 그림 `results/figs/stress_a_finetune_length.png`)
+
+**ST-A 행동 (seed 평균)**
+
+| sparsity | one-shot | 5 epoch | 20 epoch |
+|---|---|---|---|
+| 0% | S 0.081 / Δp 0.185 / avg 90.0 (= dense) | 0.088 / 0.197 / 89.5 | 0.086 / 0.195 / 89.6 |
+| 50% | **0.122 / 0.253** / 86.8 (WGA 59.7) | 0.081 / 0.191 / 89.9 | 0.083 / 0.195 / 89.8 |
+| 70% | **0.138 / 0.263** / 82.6 (WGA 14.2) | 0.081 / 0.197 / 89.3 | 0.085 / 0.206 / 89.3 |
+
+- one-shot − dense: 50% 와 70% 모두 S, d_correct, 평균 Δp 가 판정 기준을 크게 넘어 "변함" 이다.
+  - 70% 는 d_wrong 만 CI 가 0 을 포함한다.
+  - 원래 맞은 사진만 보는 d_correct 도 +0.025 / +0.039 올랐다. 그래서 단순히 오답이 늘어난 효과만은 아니다.
+- 5 epoch 모델 9개는 모두 정확도 기준을 통과했다 (dense 대비 최대 −1.1pt).
+  - best epoch 는 1~5 이고 1 epoch 째인 경우가 많다. 재학습 첫 epoch 에 대부분 회복된다.
+- 5ep 50% − 5ep ft0: 변함 없음.
+- 5ep 70% − 5ep ft0: **d_wrong 만 −0.046 [−0.078, −0.014] 로 "변함"** 이다 (배경 의존 감소 쪽).
+  - S, d_correct, 평균 Δp 는 변하지 않았다.
+  - d_wrong 은 원래 틀린 약 10% 사진의 지표라 잡음이 크다. 20ep 70% 에서도 −0.023 (CI 0 포함) 이었다.
+- 5ep − 20ep (같은 sparsity): S·평균 Δp 차이는 판정 기준 안이다. 70% 의 d_wrong 은 −0.018 로 "변함".
+
+**ST-A 히트맵 (5 epoch, 기준 = 5 epoch ft0, 70%)**
+
+| 방법 | ρ 5ep ft0 → 70% | H2a | H2b 변화량 / 잡음 | 평균 Attr_bg 변화 | 20 epoch 값 (참고) |
+|---|---|---|---|---|---|
+| Grad-CAM | +0.335 → +0.359 | 반대 (↑ · ↑) | 0.038 / 0.011 | −0.031 | ρ +0.333 → +0.332, 변화 −0.031 |
+| IG | +0.014 → +0.074 | 반대 (↑ ↑ ↑) | 0.025 / 0.011 | −0.016 | ρ +0.010 → +0.039, 변화 −0.017 |
+
+50% 는 두 방법 모두 H2a "지지 안 됨" 이다. H2b 변화량은 잡음보다 0.0004~0.0008 커서 무시할 수준이다.
+
+**ST-B 측정 방식 (70% vs ft0)**: 모든 변형에서 H2a 판정 문자열까지 기본과 같다.
+
+| 변형 | ρ ft0 → 70% | H2b 변화량 / 잡음 | 평균 Attr_bg 변화 |
+|---|---|---|---|
+| Grad-CAM 기본 / 띠 제외 / 7×7 | +0.333→+0.332 / +0.334→+0.333 / +0.332→+0.331 | 0.036/0.010, 0.038/0.011, 0.038/0.011 | −0.031 / −0.034 / −0.033 |
+| IG 기본 / 띠 제외 | +0.010→+0.039 / +0.011→+0.041 | 0.022/0.011, 0.024/0.011 | −0.017 / −0.019 |
+| RISE raw / raw + 띠 제외 (참고) | +0.109→+0.112 / +0.088→+0.096 | 0.0010/0.0005 둘 다 | −0.0005 둘 다 |
+
+RISE centered 맵은 이미지별 값만 저장돼 있어 띠 제외를 계산할 수 없다. 그래서 raw 맵끼리 비교했다.
+raw 맵은 sanity 를 통과하지 못해 판정에서는 뺐다.
+
+**ST-C IG baseline (70% vs ft0)**
+
+| baseline | ρ ft0 → 70% | H2a | H2b 변화량 / 잡음 | 평균 Attr_bg ft0 → 70% |
+|---|---|---|---|---|
+| 검정 (기본) | +0.010 → +0.039 | 지지 안 됨 (↑ · ·) | 0.022 / 0.011 | 0.633 → 0.616 |
+| blur σ=10 | **−0.095 → −0.049** | 반대 (↑ ↑ ↑) | 0.021 / 0.011 | 0.578 → 0.566 |
+
+blur 의 completeness 상대오차 중앙값은 1.0~1.2% 다.
+
+### 해석
+
+1. **"행동은 같은데 히트맵은 새 쪽으로 이동한다" (H2b) 는 측정 방식·baseline·재학습 길이에 흔들리지 않는다.**
+   이 프로젝트에서 가장 단단한 결과다.
+2. **이미지 단위 추적은 압축으로 약해지지 않는다 (H2a 기각 쪽).**
+   재학습을 짧게 하면 Grad-CAM·IG 의 추적이 오히려 조금 강해진다.
+   IG 는 baseline 에 따라 ρ 부호가 바뀐다. IG 는 추적 도구로 쓸 수 없고 "IG 는 추적하지 않는다" 로 정리한다.
+3. **압축 자체는 shortcut 의존을 키우고, 재학습이 그것을 되돌린다 (one-shot).**
+   - STEP 3 의 "≤70% 변함 없음" 은 재학습을 거친 모델에 대한 말이다.
+   - RQ 의 "압축으로 spurious 의존이 변하는 상황" 이 실제로 일어나는 곳은 one-shot 모델이다.
+   - 그러나 one-shot 은 정확도 기준(2pt) 미달이라 계획상 히트맵을 계산하지 않았다.
+4. 5ep 70% 의 d_wrong 감소는 히트맵이 새 쪽으로 이동한 방향과 같다. 원래 틀린 사진에 한정된, 잡음이 큰 지표라
+   "행동이 같다" 는 전제를 뒤집을 정도는 아니다. 보고서에는 적는다.
+
+### 한계
+
+- 재현 전이다. seed 는 3개다.
+- one-shot 결과는 정확도 기준 미달이라 참고로만 쓴다. S 증가에는 성능 저하 효과가 섞여 있을 수 있다.
+  다만 원래 맞은 사진만 보는 d_correct 도 올랐다.
+- ST-B 의 RISE 는 centered 맵의 띠 제외 값이 없어 raw 맵끼리만 비교했다.
+- ST-C 는 IG 만, ft0·70% 만 봤다.
+- ST-A 의 5 epoch H1 판정 문턱은 dense seed 표준편차로 정했다 (STEP 3 과 같다).
+
+### 다음에 할 일
+
+- [ ] (결정 필요) one-shot 50%·70% 모델의 히트맵을 계산할지 정한다.
+  - 행동이 실제로 크게 변한 유일한 조건이라, RQ ("변화를 추적하는가") 를 직접 시험할 수 있다.
+  - 정확도 기준 미달이라 계획 밖이다.
+- [ ] STEP 2~6 재현 (다른 계정)
+- [ ] 결과를 팀원과 공유하고 보고서 서술 방향(RQ 답) 논의
+
+---
+
 ## 2026-11-10 (4) — STEP 5 히트맵 채점 (H2a, H2b) + NAS 데이터 복구
 
 ### 한 줄 요약
@@ -99,7 +230,7 @@ sbatch -w aurora-g1 --job-name=xai-restore --partition=batch_ugrad --ntasks=1 --
 
 ### 다음에 할 일
 
-- [ ] stress test (P4) — ST-A fine-tuning 5 epoch, ST-B 마스크 띠·Grad-CAM 7×7, ST-C IG blur baseline
+- [x] stress test (P4) — 2026-11-10 (5) 항목
 - [ ] STEP 2~5 재현 (다른 계정)
 - [ ] 결과를 팀원과 공유하고 보고서 서술 방향(RQ 답) 논의
 

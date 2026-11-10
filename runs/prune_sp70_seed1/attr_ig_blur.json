@@ -1,0 +1,54 @@
+{
+  "method": "ig",
+  "n_images": 5794,
+  "acc": 0.8936831204694512,
+  "n_nan_attr_bg": 0,
+  "n_area0": 0,
+  "overall": {
+    "attr_bg": 0.5640344023704529,
+    "attr_bg_band": 0.5916820764541626,
+    "C": 3.170393705368042,
+    "area": 0.167213574051857,
+    "ig_rel_err": 0.06868132948875427
+  },
+  "groups": {
+    "landbird/land": {
+      "attr_bg": 0.5873409509658813,
+      "attr_bg_band": 0.6137224435806274,
+      "C": 3.0268309116363525,
+      "area": 0.16330693662166595,
+      "ig_rel_err": 0.011218061670660973
+    },
+    "landbird/water": {
+      "attr_bg": 0.5466313362121582,
+      "attr_bg_band": 0.573171854019165,
+      "C": 3.3310580253601074,
+      "area": 0.16509217023849487,
+      "ig_rel_err": 0.07790353149175644
+    },
+    "waterbird/land": {
+      "attr_bg": 0.5612837076187134,
+      "attr_bg_band": 0.5909978747367859,
+      "C": 3.095304489135742,
+      "area": 0.17851413786411285,
+      "ig_rel_err": 0.17822116613388062
+    },
+    "waterbird/water": {
+      "attr_bg": 0.5460490584373474,
+      "attr_bg_band": 0.5799666047096252,
+      "C": 3.185415029525757,
+      "area": 0.17708632349967957,
+      "ig_rel_err": 0.1285862922668457
+    }
+  },
+  "ig_rel_err_median": 0.011129170656204224,
+  "ig_steps": 200,
+  "ig_baseline": "blur",
+  "ckpt": "/data/jwook2480/xai_project/runs/prune_sp70_seed1/best.pt",
+  "images": "all",
+  "subset": 0,
+  "seconds": 1664.9,
+  "n_pred_mismatch_vs_measure": 0,
+  "pred_mismatch_p_w_orig": [],
+  "acc_diff_images_vs_final_test": 0.0
+}

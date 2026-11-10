@@ -20,6 +20,7 @@ runs/**
 !runs/*/args.json
 !runs/*/log.csv
 !runs/*/final_test.json
+!runs/*/oneshot_test.json
 !runs/*/shortcut_*.json
 #   반사실 행별 확률·이미지별 Δp (STEP 3+, 모델당 약 1MB)
 !runs/*/shortcut_*_rows.csv.gz
@@ -27,6 +28,7 @@ runs/**
 #   이미지별 Attr_bg (STEP 4, 모델·방법당 약 0.3MB)
 !runs/*/attr_gradcam.*
 !runs/*/attr_ig.*
+!runs/*/attr_ig_blur.*
 !runs/*/attr_rise.*
 #   smoke test 산출물은 의미 없는 숫자라 제외
 runs/smoke/**
