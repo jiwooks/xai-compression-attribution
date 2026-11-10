@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
+import torchvision.transforms.functional as TF
 from torch.utils.data import DataLoader, Subset
 
 from train_erm import build_model
@@ -72,12 +73,20 @@ def gradcam(model, x):
     return pred.detach(), cam224.detach(), cam7.detach()
 
 
-def integrated_gradients(model, x, steps, chunk=64):
+def ig_baseline(x, kind):
+    """black: 픽셀 0 을 정규화한 값. blur: 원본을 가우시안 σ=10px 로 흐린 이미지 (P4 ST-C).
+    정규화는 채널별 affine 이고 커널 합이 1, reflect 패딩이라 정규화 공간에서 흐려도 같다."""
+    if kind == "blur":
+        return TF.gaussian_blur(x, kernel_size=61, sigma=10.0)
+    return ((torch.zeros_like(x[:1]) - MEAN.to(x)) / STD.to(x)).expand_as(x)
+
+
+def integrated_gradients(model, x, steps, chunk=64, baseline="black"):
     """반환: pred, map (B,224,224), completeness 상대오차 (B,)"""
     with torch.no_grad():
         logits = model(x)
         pred = logits.argmax(1)
-        base = ((torch.zeros_like(x[:1]) - MEAN.to(x)) / STD.to(x)).expand_as(x)
+        base = ig_baseline(x, baseline)
         f_x = margin_of(logits, pred)
         f_b = margin_of(model(base), pred)
     alphas = (torch.arange(steps, device=x.device, dtype=x.dtype) + 0.5) / steps
@@ -201,22 +210,22 @@ def dataset(args):
     return ds, ids, Subset(ds, idx)
 
 
-def run_method(model, method, x, masks_rise, ig_steps):
+def run_method(model, method, x, masks_rise, ig_steps, ig_base="black"):
     if method == "gradcam":
         pred, m, cam7 = gradcam(model, x)
         return pred, m, {"cam7": cam7}
     if method == "ig":
-        pred, m, err = integrated_gradients(model, x, ig_steps)
+        pred, m, err = integrated_gradients(model, x, ig_steps, baseline=ig_base)
         return pred, m, {"ig_rel_err": err}
     pred, m, pbar = rise(model, x, masks_rise)
     return pred, m, {"rise_pbar": pbar}
 
 
-def compute(model, method, loader, ids, device, ig_steps, masks_rise, png_dir=None, n_png=0):
+def compute(model, method, loader, ids, device, ig_steps, masks_rise, png_dir=None, n_png=0, ig_base="black"):
     rows, saved = [], 0
     for x, y, g, i, mask in loader:
         x, mask = x.to(device), mask.to(device)
-        pred, smap, extra = run_method(model, method, x, masks_rise, ig_steps)
+        pred, smap, extra = run_method(model, method, x, masks_rise, ig_steps, ig_base)
         sc = scores(smap, mask, extra.get("cam7"))
         rec = {"img_id": ids[i.numpy()], "group": g.numpy(), "y": y.numpy(), "pred": pred.cpu().numpy()}
         rec.update({k: v.cpu().numpy() for k, v in sc.items()})
@@ -341,6 +350,8 @@ def main():
     ap.add_argument("--batch_size", type=int, default=None)
     ap.add_argument("--num_workers", type=int, default=8)
     ap.add_argument("--ig_steps", type=int, default=50)
+    ap.add_argument("--ig_baseline", choices=["black", "blur"], default="black",
+                    help="blur = 가우시안 σ=10px 로 흐린 원본 (P4 ST-C)")
     ap.add_argument("--rise_masks", type=int, default=2000)
     ap.add_argument("--rise_seed", type=int, default=0, help="RISE 마스크 시드 (모든 모델 공통)")
     ap.add_argument("--expect_acc", type=float, default=None,
@@ -378,7 +389,8 @@ def main():
 
     t0 = time.time()
     steps = args.ig_steps
-    df = compute(model, args.method, loader, ids, device, steps, masks_rise, args.png_dir, args.n_png)
+    df = compute(model, args.method, loader, ids, device, steps, masks_rise, args.png_dir, args.n_png,
+                 ig_base=args.ig_baseline)
     extra = {}
     if args.method == "ig":
         med = float(df["ig_rel_err"].median())
@@ -386,9 +398,10 @@ def main():
         if med > 0.05 and steps < 100:
             extra["ig_rel_err_median_first"] = med
             steps = 100
-            df = compute(model, args.method, loader, ids, device, steps, masks_rise)
+            df = compute(model, args.method, loader, ids, device, steps, masks_rise, ig_base=args.ig_baseline)
             print(f"IG 100 step 재계산: 중앙값 {df['ig_rel_err'].median():.4f}", flush=True)
         extra["ig_steps"] = steps
+        extra["ig_baseline"] = args.ig_baseline
     if args.method == "rise":
         extra.update({"rise_masks": args.rise_masks, "rise_seed": args.rise_seed, "rise_grid": 7, "rise_p": 0.5})
     extra.update({"ckpt": args.ckpt, "images": args.images, "subset": args.subset,

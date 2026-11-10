@@ -4,6 +4,7 @@
 #   mkdir -p logs
 #   sbatch scripts/prune_slurm.sh 0 "0 30 50 70"     # seed, sparsity(%) 목록
 #   sbatch scripts/prune_slurm.sh 0 "80 90 95"
+#   EXTRA="--epochs 5 --eval_every 1 --save_oneshot" sbatch scripts/prune_slurm.sh 0 "0 50 70" prune5ep   # P4 ST-A
 # 점검:  EXTRA="--subset 128 --epochs 2 --eval_every 1" SKIP_S=1 \
 #        srun -p debug_ugrad --gres=gpu:1 --cpus-per-gpu=8 --mem-per-gpu=32G -t 0:30:00 \
 #        bash scripts/prune_slurm.sh 0 "50" smoke
@@ -46,5 +47,14 @@ for SP in $SPARSITIES; do
       --ckpt "$PROJ/runs/$RUN/best.pt" --wb_root "$WB_ROOT" \
       --cf_dir "$LOCAL_ROOT/cf/k5" --out "$PROJ/runs/$RUN/shortcut_k5.json" \
       --expect_avg_acc "$EXPECT" --seed "$SEED" --save_probs
+  # one-shot(재학습 전) 모델도 있으면 같은 방식으로 잰다 (EXTRA 에 --save_oneshot, P4 ST-A)
+  if [ -f "$PROJ/runs/$RUN/oneshot.pt" ]; then
+    EXPECT1=$(grep '"avg_acc"' "$PROJ/runs/$RUN/oneshot_test.json" | head -1 | tr -dc '0-9.')
+    "$PY" measure_shortcut.py \
+        --ckpt "$PROJ/runs/$RUN/oneshot.pt" --wb_root "$WB_ROOT" \
+        --cf_dir "$LOCAL_ROOT/cf/k5" --out "$PROJ/runs/$RUN/shortcut_k5_oneshot.json" \
+        --expect_avg_acc "$EXPECT1" --seed "$SEED" --save_probs \
+      || echo "[경고] $RUN one-shot 측정 실패 (fine-tuning 결과는 유지)"
+  fi
 done
 echo "=== 완료 ==="

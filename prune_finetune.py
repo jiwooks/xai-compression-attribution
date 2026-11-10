@@ -72,6 +72,8 @@ def main():
     ap.add_argument("--eval_every", type=int, default=2)
     ap.add_argument("--amp", action="store_true")
     ap.add_argument("--subset", type=int, default=0, help="점검용. 각 split 을 이 장수로 제한")
+    ap.add_argument("--save_oneshot", action="store_true",
+                    help="fine-tuning 전(one-shot) 모델을 oneshot.pt, 성능을 oneshot_test.json 으로 저장 (P4 ST-A)")
     args = ap.parse_args()
     if not 0 <= args.sparsity < 1:
         raise SystemExit("--sparsity 는 0 이상 1 미만")
@@ -110,6 +112,12 @@ def main():
     print("[  0] one-shot (fine-tuning 전)")
     print("  val : " + format_eval(oneshot_val))
     print("  test: " + format_eval(oneshot_test))
+    if args.save_oneshot and args.sparsity > 0:
+        torch.save({"epoch": 0, "state_dict": plain_state_dict(model),
+                    "sparsity": args.sparsity, "args": vars(args)},
+                   os.path.join(args.out_dir, "oneshot.pt"))
+        with open(os.path.join(args.out_dir, "oneshot_test.json"), "w") as f:
+            json.dump(to_json(oneshot_test), f, indent=2)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum,

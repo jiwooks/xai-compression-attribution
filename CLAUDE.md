@@ -116,7 +116,7 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 | 3+ | 반사실 확률 저장 + `Δp` + H1 재판정 (ft0 대비, 짝지은 bootstrap) | **1회 실행, 재현 전 (2026-11-10)** — 24개 모델 회귀 확인 통과. ft0 대비 ≤70% 는 네 지표 모두 "변함 없음". 평균 Δp 는 70% +0.011 (CI 0 미포함, 기준 0.0135 미달), 80% +0.023 (변함). `results/h1_k5.md` |
 | 4 | attribution — 모델 15개 (dense, ft0, 30/50/70% × seed 3). Grad-CAM·IG 는 테스트 5,794장, RISE 는 1,000장. `Attr_bg`, `Attr_bg_band`, `C`, Grad-CAM 7×7, RISE centered | **1회 실행, 재현 전 (2026-11-10)** — 45개(15 모델 × 3 방법) 완료. sanity 통과(Grad-CAM −0.01, IG 0.39, RISE centered 0.00). IG 200 step, completeness 0.9~2.2%. 평균 Attr_bg 는 세 방법 모두 70% 에서 낮아진다 (새 쪽 이동). `WORKLOG.md` |
 | 5 | 추적성 분석 — H2a (부분 Spearman ρ(Attr_bg, Δp \| area)), H2b (ft0 대비 이미지별 변화 vs seed 간 잡음) | **1회 실행, 재현 전 (2026-11-10)** — H2a 세 방법 모두 지지 안 됨 (RISE 는 70% 에서 추적 강화). H2b 70% 세 방법 모두 "행동은 같은데 설명이 바뀌었다" (새 쪽, 잡음의 1.7~3.5배). `results/attribution_k5.md` |
-| 6 | stress test — ST-A fine-tuning 5 epoch, ST-B 마스크 띠·Grad-CAM 7×7, ST-C IG blur baseline | **계획 확정 (2026-11-10)**, 미착수 |
+| 6 | stress test — ST-A fine-tuning 5 epoch, ST-B 마스크 띠·Grad-CAM 7×7, ST-C IG blur baseline | **1회 실행, 재현 전 (2026-11-10)** — 셋 모두 핵심 결론 유지 (H2a 약화 없음, H2b 70% 새 쪽 이동). 세부: 5ep·blur IG 에서 H2a 가 "반대 (추적 강화)", IG ρ 부호가 baseline 에 따라 바뀜. one-shot(재학습 전)은 S +0.04~0.06 (정확도 기준 미달, 참고). `results/stress_k5.md` |
 
 STEP 1 과 STEP 2 는 병렬로 진행 가능하다. STEP 2 가 이 프로젝트의 핵심 장치이자
 구현 난이도가 가장 높으므로 일찍 시작할 것.
@@ -317,11 +317,13 @@ waterbirds.py           데이터셋 로더, 전처리, 그룹별 평가 유틸
 train_erm.py            STEP 1. dense ERM 학습
 generate_counterfactuals.py  STEP 2. 반사실 이미지 생성
 measure_shortcut.py     STEP 2. BFR, S 측정. --save_probs 로 반사실 확률·이미지별 Δp 저장 (STEP 3+)
-prune_finetune.py       STEP 3. 전역 magnitude pruning + fine-tuning
+prune_finetune.py       STEP 3. 전역 magnitude pruning + fine-tuning. --save_oneshot 으로 재학습 전 모델도 저장 (ST-A)
 summarize_pruning.py    STEP 3. sparsity 별 정확도·S 요약표 (numpy 만 필요)
 analyze_h1.py           STEP 3+. H1 재판정 — ft0/dense 대비 짝지은 two-way bootstrap (numpy/pandas)
 analyze_h2.py           STEP 5. H2a(부분 Spearman 추적)·H2b(변화량 vs seed 잡음) 채점, results/figs (numpy/pandas/scipy/matplotlib)
-compute_attribution.py  STEP 4. Grad-CAM / IG / RISE 이미지별 Attr_bg, RISE 목록 생성, 가중치 무작위화 sanity
+analyze_stress.py       STEP 6. stress test ST-A/B/C 를 analyze_h1·h2 함수로 다시 판정 → results/stress_k5.md
+compute_attribution.py  STEP 4. Grad-CAM / IG / RISE 이미지별 Attr_bg, RISE 목록 생성, 가중치 무작위화 sanity.
+                        --ig_baseline blur (σ=10px, ST-C)
 scripts/
   _common.sh            잡 스크립트 공통 경로·캐시 설정
   setup_env.sh          conda 환경 xai 생성 (계산 노드에서 실행)
@@ -335,7 +337,7 @@ scripts/
   stage_cf.sh           배경·반사실 tar 를 로컬로 펼치기
   generate_cf_slurm.sh  반사실 생성 후 NAS 에 tar 로 저장
   measure_shortcut_slurm.sh  S 측정 (sbatch)
-  prune_slurm.sh        seed 하나의 sparsity 목록을 pruning + fine-tuning + S·Δp 측정 (sbatch)
+  prune_slurm.sh        seed 하나의 sparsity 목록을 pruning + fine-tuning + S·Δp 측정 (sbatch). oneshot.pt 가 있으면 그것도 측정
   remeasure_slurm.sh    학습된 모델들의 반사실 확률 재측정 + 회귀 확인 (sbatch)
   attr_slurm.sh         seed 하나의 모델 목록에 attribution 계산 (sbatch)
   attr_sanity_slurm.sh  가중치 무작위화 sanity (sbatch)
