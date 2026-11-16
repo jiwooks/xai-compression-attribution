@@ -13,6 +13,7 @@ H2a — 모델 안에서 히트맵이 행동을 추적하는가
   보조: 원시 Spearman, AUROC(정답 = Δp ≥ 0.10, 점수 = Attr_bg), C 로 계산한 같은 지표
   CI: 이미지 bootstrap 2,000회. 모든 모델이 같은 재표본 인덱스를 써서 차이가 짝지어진다.
   판정 (결정 4): 70% 의 주 지표가 같은 seed ft0 의 95% CI 밖이고, seed 3개 중 2개 이상이 같은 방향이면 "지지".
+        일반식은 포함 seed 수의 과반 (seed 3·4 보조 분석, PREREG_seeds5.md 결정 19).
                  방향이 아래(추적 약화)면 H2a 지지, 위(추적 강화)면 반대 방향으로 표시한다.
   참고: ft0 대비 짝지은 차이의 CI (seed 별, seed 평균) 도 함께 보고한다.
 
@@ -24,9 +25,12 @@ H2b — 행동이 같은 모델끼리 히트맵이 같은가
 
 numpy/pandas/scipy/matplotlib 만 쓴다. 마스터 노드에서 실행하지 말 것 (srun, CPU 1개).
   python analyze_h2.py --out results/attribution_k5.md
+  보조 (seed 5개): python analyze_h2.py --seeds 0 1 2 3 4 --out results/attribution_k5_seeds5.md \
+                   --fig_dir results/figs_seeds5 --h1 results/h1_k5_seeds5.md
 """
 
 import argparse
+import itertools
 import os
 import re
 
@@ -50,10 +54,11 @@ SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
 
 # ---------------------------------------------------------------- 데이터
 
-def load(method, col=None, models=MODELS, seeds=SEEDS, suffix=""):
+def load(method, col=None, models=MODELS, seeds=None, suffix=""):
     """반환: DataFrame (img_id 정렬) 과 {(model, seed): (attr, C, dp)}
     col·models·suffix 는 stress test(analyze_stress.py)용. 기본값이 STEP 5 설정이다."""
     col = col or ("attr_bg_centered" if method == "rise" else "attr_bg")
+    seeds = SEEDS if seeds is None else seeds
     base, per = None, {}
     for m in models:
         for s in seeds:
@@ -119,23 +124,30 @@ def compute_h2a(base, per, sel, idx):
     return out
 
 
-def verdict_h2a(st, model, var="attr", key="partial", ref="prune_sp00", seeds=SEEDS):
+def majority(n):
+    """포함 seed 수의 과반 (3개면 2, 4·5개면 3)"""
+    return n // 2 + 1
+
+
+def verdict_h2a(st, model, var="attr", key="partial", ref="prune_sp00", seeds=None):
     """결정 4 의 규칙. 반환: (판정 문자열, 바깥으로 나간 seed 별 방향 목록)"""
+    seeds = SEEDS if seeds is None else seeds
     dirs = []
     for s in seeds:
         lo, hi = ci(st[(ref, s, var)][key])
         v = st[(model, s, var)][key][0]
         dirs.append("↓" if v < lo else ("↑" if v > hi else "·"))
     down, up = dirs.count("↓"), dirs.count("↑")
-    if down >= 2:
+    if down >= majority(len(seeds)):
         return "지지 (추적 약화)", dirs
-    if up >= 2:
+    if up >= majority(len(seeds)):
         return "반대 (추적 강화)", dirs
     return "지지 안 됨", dirs
 
 
-def paired_diff(st, model, var="attr", key="partial", ref="prune_sp00", seeds=SEEDS):
+def paired_diff(st, model, var="attr", key="partial", ref="prune_sp00", seeds=None):
     """ft0 대비 짝지은 차이. 반환: seed 별 (Δ, lo, hi) 와 seed 평균 (Δ, lo, hi)"""
+    seeds = SEEDS if seeds is None else seeds
     per = {}
     for s in seeds:
         d = st[(model, s, var)][key] - st[(ref, s, var)][key]
@@ -144,10 +156,12 @@ def paired_diff(st, model, var="attr", key="partial", ref="prune_sp00", seeds=SE
     return per, (pooled[0], *ci(pooled))
 
 
-def compute_h2b(per, idx, sp, ref="prune_sp00", seeds=SEEDS):
-    """반환: dict — 변화량·잡음 중앙값, 중앙값 차이 (점, CI), 평균 방향 변화 (점, CI), seed 별 중앙값"""
+def compute_h2b(per, idx, sp, ref="prune_sp00", seeds=None):
+    """반환: dict — 변화량·잡음 중앙값, 중앙값 차이 (점, CI), 평균 방향 변화 (점, CI), seed 별 중앙값
+    잡음 = ref 의 모든 seed 쌍 평균 (3개면 3쌍, 5개면 10쌍)"""
+    seeds = SEEDS if seeds is None else seeds
     change = np.mean([np.abs(per[(sp, s)][0] - per[(ref, s)][0]) for s in seeds], 0)
-    pairs = [(0, 1), (0, 2), (1, 2)]
+    pairs = list(itertools.combinations(seeds, 2))
     noise = np.mean([np.abs(per[(ref, a)][0] - per[(ref, b)][0]) for a, b in pairs], 0)
     signed = np.mean([per[(sp, s)][0] - per[(ref, s)][0] for s in seeds], 0)
     dmed = np.median(change[idx], 1) - np.median(noise[idx], 1)
@@ -197,9 +211,10 @@ def fig_h2a(results, out_dir):
         _style(ax)
         for i, m in enumerate(MODELS):
             vals = [st[(m, s, "attr")]["partial"] for s in SEEDS]
+            gap = min(0.12, 0.48 / max(len(vals) - 1, 1))
             for j, v in enumerate(vals):                       # seed 별 점 + 95% CI
                 lo, hi = ci(v)
-                x = i + (j - 1) * 0.12
+                x = i + (j - (len(vals) - 1) / 2) * gap
                 ax.plot([x, x], [lo, hi], color=MUTED, linewidth=1.2)
                 ax.plot(x, v[0], "o", ms=4, color=MUTED, mec=SURF, mew=1)
             ax.plot(i, np.mean([v[0] for v in vals]), "_", ms=16, mew=2.5, color=SERIES[0])
@@ -300,7 +315,11 @@ def main():
     ap.add_argument("--fig_dir", default="results/figs")
     ap.add_argument("--h1", default="results/h1_k5.md")
     ap.add_argument("--no_fig", action="store_true")
+    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2],
+                    help="포함할 seed (기본 0 1 2 = 주 분석). 보조 분석은 PREREG_seeds5.md")
     args = ap.parse_args()
+    global SEEDS
+    SEEDS = list(args.seeds)
 
     h1 = read_h1(args.h1)
     data, results, h2b = {}, {}, {}
@@ -338,7 +357,11 @@ def main():
         r7 = np.mean([st[("prune_sp70", s, "attr")]["partial"][0] for s in SEEDS])
         L.append(f"| {MLAB[method]} | {v} ({' '.join(dirs)}) | {r0:+.3f} | {r7:+.3f} | {fci(pooled)} | "
                  f"{fci(b['dmed'])} | {fci(b['dmean'])} | {h1.get('prune_sp70', '-')} |")
-    L += ["\n- H2a 방향 기호: ↓ = 70% 가 같은 seed ft0 의 95% CI 아래, ↑ = 위, · = 안. 2개 이상 ↓ 면 지지.",
+    if SEEDS != [0, 1, 2]:
+        L.insert(1, f"**보조 분석 — seed {' '.join(map(str, SEEDS))}** (PREREG_seeds5.md). "
+                    f"주 판정은 seed 0~2 의 `results/attribution_k5.md` 다.\n")
+    L += [f"\n- H2a 방향 기호: ↓ = 70% 가 같은 seed ft0 의 95% CI 아래, ↑ = 위, · = 안. "
+          f"{majority(len(SEEDS))}개 이상 ↓ 면 지지.",
           "- H2b 중앙값 차이 > 0 이고 CI 가 0 을 넘으면 압축에 따른 히트맵 변화가 seed 간 잡음보다 크다.",
           "- 평균 Attr_bg 변화 < 0 = 히트맵이 새 쪽으로 이동.\n"]
 
@@ -347,8 +370,9 @@ def main():
     for method in METHODS:
         st = results[method]["all"]
         L += [f"### {MLAB[method]}\n",
-              "| 모델 | 부분 ρ seed 0 [CI] | seed 1 [CI] | seed 2 [CI] | 평균 | 원시 Spearman | AUROC | 부분 ρ (C) | ft0 대비 Δ (seed 평균) [CI] | 판정 |",
-              "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+              "| 모델 | 부분 ρ seed " + " | ".join(f"{s} [CI]" if k == 0 else f"seed {s} [CI]" for k, s in enumerate(SEEDS))
+              + " | 평균 | 원시 Spearman | AUROC | 부분 ρ (C) | ft0 대비 Δ (seed 평균) [CI] | 판정 |",
+              "| " + " | ".join("---" for _ in range(len(SEEDS) + 7)) + " |"]
         for m in MODELS:
             cells = [fci((st[(m, s, "attr")]["partial"][0], *ci(st[(m, s, "attr")]["partial"]))) for s in SEEDS]
             mean = lambda var, key: np.mean([st[(m, s, var)][key][0] for s in SEEDS])
@@ -412,7 +436,7 @@ def main():
                      f"{fci(b['dmean'])} | {', '.join(f'{x:.4f}' for x in b['change_med_seed'])} | "
                      f"{', '.join(f'{x:.4f}' for x in b['noise_med_pair'])} | {interp} |")
         L.append("")
-    L.append("H1 열은 `results/h1_k5.md` 의 ft0 대비 seed 합산 판정이다 (S, d_correct, d_wrong, 평균 Δp).\n")
+    L.append(f"H1 열은 `{args.h1}` 의 ft0 대비 seed 합산 판정이다 (S, d_correct, d_wrong, 평균 Δp).\n")
 
     # ---- 모델 단위 참고
     L += ["## 참고 — 모델 단위 (15개 모델)\n",

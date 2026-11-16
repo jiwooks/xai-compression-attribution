@@ -51,13 +51,13 @@ def decompose(d):
     return out
 
 
-def load(tag):
+def load(tag, seeds=(0, 1, 2)):
     runs = defaultdict(dict)   # name -> seed -> record
     for path in sorted(glob.glob(os.path.join("runs", "*", "final_test.json"))):
         run = os.path.basename(os.path.dirname(path))
         m = re.fullmatch(r"(erm|prune_sp\d+)_seed(\d+)", run)
         sc = os.path.join(os.path.dirname(path), f"shortcut_{tag}.json")
-        if not m or not os.path.exists(sc):
+        if not m or not os.path.exists(sc) or int(m.group(2)) not in seeds:
             continue
         with open(path) as f:
             ft = json.load(f)
@@ -87,9 +87,11 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tag", default="k5")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2],
+                    help="포함할 seed (기본 0 1 2 = 주 분석. seed 3·4 는 보조, PREREG_seeds5.md)")
     args = ap.parse_args()
 
-    runs = load(args.tag)
+    runs = load(args.tag, args.seeds)
     dense = runs.get("erm", {})
     if not dense:
         raise SystemExit("runs/erm_seed*/ 의 결과가 없다. 저장소 루트에서 실행할 것.")
