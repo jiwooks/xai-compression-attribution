@@ -415,8 +415,10 @@ def main():
 
     # ---- H2b
     L.append("## H2b — 행동이 같은 모델끼리 히트맵이 같은가\n")
+    npair = len(SEEDS) * (len(SEEDS) - 1) // 2
+    pair_text = "세 쌍" if npair == 3 else f"{npair}쌍"     # 기본(seed 3개) 출력 문구는 그대로 둔다
     L.append("변화량 = 이미지별 |Attr_bg(sp) − Attr_bg(ft0)| (같은 seed) 의 seed 평균. "
-             "잡음 = 이미지별 |Attr_bg(ft0, a) − Attr_bg(ft0, b)| 의 세 쌍 평균.\n")
+             f"잡음 = 이미지별 |Attr_bg(ft0, a) − Attr_bg(ft0, b)| 의 {pair_text} 평균.\n")
     for method in METHODS:
         L += [f"### {MLAB[method]}\n",
               "| sparsity | H1 (ft0 대비) | 변화량 중앙값 | 잡음 중앙값 | 차이 [CI] | 평균 Attr_bg 변화 [CI] | seed 별 변화량 중앙값 | 쌍별 잡음 중앙값 | 해석 |",
@@ -439,7 +441,7 @@ def main():
     L.append(f"H1 열은 `{args.h1}` 의 ft0 대비 seed 합산 판정이다 (S, d_correct, d_wrong, 평균 Δp).\n")
 
     # ---- 모델 단위 참고
-    L += ["## 참고 — 모델 단위 (15개 모델)\n",
+    L += [f"## 참고 — 모델 단위 ({5 * len(SEEDS)}개 모델)\n",
           "| 방법 | Spearman(평균 Attr_bg, 평균 Δp) |", "| --- | --- |"]
     from scipy.stats import spearmanr
     for method in METHODS:

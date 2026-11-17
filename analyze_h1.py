@@ -215,12 +215,12 @@ def main():
         h3 = " 판정 (3개 기준) |" if aux else ""
         L += [f"\n## {title} — seed 합산\n",
               "| 모델 | 포함 seed | " + " | ".join(f"Δ{LABEL[m]}" for m in METRICS) + f" |{h3} 판정 |",
-              "| --- | --- | " + " | ".join("---" for _ in METRICS) + (" | --- |" if aux else "") + " | --- |"]
+              "| --- | --- | " + " | ".join("---" for _ in METRICS) + (" | ---" if aux else "") + " | --- |"]
         for name in models:
             if (name, "all") not in res:
                 if name not in ("erm", base) and any((name, s) in res for s in seeds):
                     L.append(f"| {name} | 없음 | " + " | ".join("-" for _ in METRICS)
-                             + (" | - |" if aux else "") + " | 전 seed 정확도 제외 |")
+                             + (" | -" if aux else "") + " | 전 seed 정확도 제외 |")
                 continue
             d, lo, hi, ch, inc, ch3 = res[(name, "all")]
             cells = [fmt_ci(d[j], lo[j], hi[j]) + (" ★" if ch[j] else "") for j in range(4)]

@@ -1,0 +1,14 @@
+==> node=aurora-g4  local=/local_datasets/jwook2480/xai
+[skip] waterbird_complete95_forest2water2.tar.gz 이미 펼쳐져 있음
+[skip] CUB_200_2011.tgz 이미 펼쳐져 있음
+[skip] segmentations.tgz 이미 펼쳐져 있음
+
+==> 스테이징 완료
+494M	/local_datasets/jwook2480/xai/waterbird_complete95_forest2water2
+1.3G	/local_datasets/jwook2480/xai/CUB_200_2011
+LOCAL_ROOT=/local_datasets/jwook2480/xai
+[sanity] gradcam: Spearman 중앙값 -0.035 (IQR -0.148~0.124, n=200)
+[sanity] ig: Spearman 중앙값 0.389 (IQR 0.323~0.460, n=200)
+[sanity] rise: Spearman 중앙값 0.786 (IQR 0.258~0.997, n=200)
+[sanity] rise_centered: Spearman 중앙값 0.000 (IQR -0.053~0.072, n=200)
+저장: results/attr_sanity_erm_seed3.json
