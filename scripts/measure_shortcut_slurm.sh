@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # STEP 2 shortcut 지수 S 측정.
 #   sbatch scripts/measure_shortcut_slurm.sh k5 0     # 반사실 이름, seed
+#   EXTRA="--save_probs" sbatch scripts/measure_shortcut_slurm.sh k5 3   # 반사실 확률·Δp 저장
 
 #SBATCH --job-name=xai-S
 #SBATCH --partition=batch_ugrad
@@ -30,4 +31,4 @@ EXPECT=$(grep '"avg_acc"' "$RUN/final_test.json" | tr -dc '0-9.')
     --cf_dir "$LOCAL_ROOT/cf/$NAME" \
     --out "$RUN/shortcut_${NAME}.json" \
     --expect_avg_acc "$EXPECT" \
-    --seed "$SEED"
+    --seed "$SEED" ${EXTRA:-}

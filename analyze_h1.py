@@ -41,11 +41,12 @@ MAX_DROP = 0.02
 KEY = ["img_id", "condition", "k"]
 
 
-def find_runs(tag):
+def find_runs(tag, seeds=(0, 1, 2)):
     out = {}
     for name in sorted(os.listdir("runs")):
         m = re.fullmatch(r"(erm|prune_sp\d+)_seed(\d+)", name)
-        if m and os.path.exists(os.path.join("runs", name, f"shortcut_{tag}_rows.csv.gz")):
+        if m and int(m.group(2)) in seeds \
+                and os.path.exists(os.path.join("runs", name, f"shortcut_{tag}_rows.csv.gz")):
             out[(m.group(1), int(m.group(2)))] = os.path.join("runs", name)
     return out
 
@@ -128,9 +129,12 @@ def main():
     ap.add_argument("--n_boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2],
+                    help="포함할 seed (기본 0 1 2 = 주 분석). 다르면 3개 기준(seed 0~2) 판정 열을 함께 낸다 (결정 18)")
     args = ap.parse_args()
+    aux = sorted(args.seeds) != [0, 1, 2]
 
-    runs = find_runs(args.tag)
+    runs = find_runs(args.tag, args.seeds)
     if not runs:
         raise SystemExit("runs/*/shortcut_<tag>_rows.csv.gz 가 없다. 저장소 루트에서 실행하고 remeasure 를 먼저 돌릴 것.")
     ref, cols, avg = load(runs, args.tag)
@@ -151,6 +155,9 @@ def main():
     seeds = sorted({k[1] for k in keys})
     dense = [idx[("erm", s)] for s in seeds if ("erm", s) in idx]
     thr = 2 * point[dense].std(0, ddof=1)                       # (4,)
+    # 보조 분석(결정 18): 3개 기준 = dense seed 0~2 의 표준편차 × 2 (기존 값)
+    dense3 = [idx[("erm", s)] for s in (0, 1, 2) if ("erm", s) in idx]
+    thr3 = 2 * point[dense3].std(0, ddof=1) if aux else thr
 
     def included(name, s):
         return (name, s) in idx and ("erm", s) in idx and avg[(name, s)] - avg[("erm", s)] >= -MAX_DROP
@@ -172,7 +179,8 @@ def main():
             for s, (d, b) in per.items():
                 lo, hi = np.nanpercentile(b, 2.5, 0), np.nanpercentile(b, 97.5, 0)
                 changed = ((lo > 0) | (hi < 0)) & (np.abs(d) >= thr)
-                res[(name, s)] = (d, lo, hi, changed, inc if s == "all" else None)
+                changed3 = ((lo > 0) | (hi < 0)) & (np.abs(d) >= thr3)
+                res[(name, s)] = (d, lo, hi, changed, inc if s == "all" else None, changed3)
         return res
 
     L = [f"# H1 재판정 (tag={args.tag})\n",
@@ -187,6 +195,10 @@ def main():
     for j, m in enumerate(METRICS):
         vals = ", ".join(f"{point[i, j]:.4f}" for i in dense)
         L.append(f"| {LABEL[m]} | {vals} | {thr[j]/2:.4f} | {thr[j]:.4f} |")
+    if aux:
+        L += [f"\n보조 분석 (seed {' '.join(map(str, args.seeds))}). 위 기준은 dense seed {len(dense)}개의 값이다 (결정 18). "
+              "'판정 (3개 기준)' 열은 dense seed 0~2 기준(기존 값): "
+              + ", ".join(f"{LABEL[m]} {thr3[j]:.4f}" for j, m in enumerate(METRICS)) + "."]
 
     L += ["\n## 모델별 값 (seed 평균 ± 표준편차)\n",
           "| 모델 | avg | " + " | ".join(LABEL[m] for m in METRICS) + " |",
@@ -200,18 +212,23 @@ def main():
 
     for base, title in (("prune_sp00", "ft0 대비 (주 판정)"), ("erm", "dense 대비 (참고)")):
         res = compare(base)
+        h3 = " 판정 (3개 기준) |" if aux else ""
         L += [f"\n## {title} — seed 합산\n",
-              "| 모델 | 포함 seed | " + " | ".join(f"Δ{LABEL[m]}" for m in METRICS) + " | 판정 |",
-              "| --- | --- | " + " | ".join("---" for _ in METRICS) + " | --- |"]
+              "| 모델 | 포함 seed | " + " | ".join(f"Δ{LABEL[m]}" for m in METRICS) + f" |{h3} 판정 |",
+              "| --- | --- | " + " | ".join("---" for _ in METRICS) + (" | ---" if aux else "") + " | --- |"]
         for name in models:
             if (name, "all") not in res:
                 if name not in ("erm", base) and any((name, s) in res for s in seeds):
-                    L.append(f"| {name} | 없음 | " + " | ".join("-" for _ in METRICS) + " | 전 seed 정확도 제외 |")
+                    L.append(f"| {name} | 없음 | " + " | ".join("-" for _ in METRICS)
+                             + (" | -" if aux else "") + " | 전 seed 정확도 제외 |")
                 continue
-            d, lo, hi, ch, inc = res[(name, "all")]
+            d, lo, hi, ch, inc, ch3 = res[(name, "all")]
             cells = [fmt_ci(d[j], lo[j], hi[j]) + (" ★" if ch[j] else "") for j in range(4)]
-            verdict = "변함: " + ", ".join(LABEL[m] for j, m in enumerate(METRICS) if ch[j]) if ch.any() else "변함 없음"
-            L.append(f"| {name} | {','.join(map(str, inc))} | " + " | ".join(cells) + f" | {verdict} |")
+
+            def vtext(c):
+                return "변함: " + ", ".join(LABEL[m] for j, m in enumerate(METRICS) if c[j]) if c.any() else "변함 없음"
+            v3 = f" {vtext(ch3)} |" if aux else ""
+            L.append(f"| {name} | {','.join(map(str, inc))} | " + " | ".join(cells) + f" |{v3} {vtext(ch)} |")
         L += [f"\n### {title} — seed 별\n",
               "| 모델 | seed | 정확도 제외 | " + " | ".join(f"Δ{LABEL[m]}" for m in METRICS) + " |",
               "| --- | --- | --- | " + " | ".join("---" for _ in METRICS) + " |"]
@@ -219,7 +236,7 @@ def main():
             for s in seeds:
                 if (name, s) not in res:
                     continue
-                d, lo, hi, ch, _ = res[(name, s)]
+                d, lo, hi, ch, _, _ = res[(name, s)]
                 cells = [fmt_ci(d[j], lo[j], hi[j]) + (" ★" if ch[j] else "") for j in range(4)]
                 L.append(f"| {name} | {s} | {'예' if not included(name, s) else ''} | " + " | ".join(cells) + " |")
 

@@ -117,6 +117,7 @@ Attr_bg(x) = sum_{i not in M} |s_i| / sum_i |s_i|
 | 4 | attribution — 모델 15개 (dense, ft0, 30/50/70% × seed 3). Grad-CAM·IG 는 테스트 5,794장, RISE 는 1,000장. `Attr_bg`, `Attr_bg_band`, `C`, Grad-CAM 7×7, RISE centered | **1회 실행, 재현 전 (2026-11-10)** — 45개(15 모델 × 3 방법) 완료. sanity 통과(Grad-CAM −0.01, IG 0.39, RISE centered 0.00). IG 200 step, completeness 0.9~2.2%. 평균 Attr_bg 는 세 방법 모두 70% 에서 낮아진다 (새 쪽 이동). `WORKLOG.md` |
 | 5 | 추적성 분석 — H2a (부분 Spearman ρ(Attr_bg, Δp \| area)), H2b (ft0 대비 이미지별 변화 vs seed 간 잡음) | **1회 실행, 재현 전 (2026-11-10)** — H2a 세 방법 모두 지지 안 됨 (RISE 는 70% 에서 추적 강화). H2b 70% 세 방법 모두 "행동은 같은데 설명이 바뀌었다" (새 쪽, 잡음의 1.7~3.5배). `results/attribution_k5.md` |
 | 6 | stress test — ST-A fine-tuning 5 epoch, ST-B 마스크 띠·Grad-CAM 7×7, ST-C IG blur baseline | **1회 실행, 재현 전 (2026-11-10)** — 셋 모두 핵심 결론 유지 (H2a 약화 없음, H2b 70% 새 쪽 이동). 세부: 5ep·blur IG 에서 H2a 가 "반대 (추적 강화)", IG ρ 부호가 baseline 에 따라 바뀜. one-shot(재학습 전)은 S +0.04~0.06 (정확도 기준 미달, 참고). `results/stress_k5.md` |
+| 보조 | seed 3·4 추가 (dense, ft0, 30/50/70%), seed 5개로 H1·H2 재판정. 사전 등록 `PREREG_seeds5.md` | **1회 실행, 재현 전 (2026-11-17)** — 점검 모두 통과, 주 결과 파일 변화 없음. H2a 결론 같음 (RISE 5/5 추적 강화). **H1 70% d_wrong 이 "변함" 으로 바뀜** (−0.030, CI 상한 −0.001) → H2b 70% 는 규칙상 해석 제외 (히트맵 이동 크기는 같음). `results/*_seeds5.md`, `WORKLOG.md` |
 
 STEP 1 과 STEP 2 는 병렬로 진행 가능하다. STEP 2 가 이 프로젝트의 핵심 장치이자
 구현 난이도가 가장 높으므로 일찍 시작할 것.
@@ -215,6 +216,11 @@ STEP 3 에서 정확도 유지 구간(≤70%)의 `S` 가 변하지 않아 H2 분
 13. **원본 예측 대조는 이미지별로 한다.** 배치 크기 차이로 결정 경계(p_w ≈ 0.5002)의 사진 1장이 바뀌는 경우가 있어
     정확도 완전 일치 대신 `measure_shortcut` 의 원본 예측과 이미지별로 맞추고 5장까지 허용한다.
 
+### 2026-11-15 결정 사항 14~21 (seed 3·4 보조 분석)
+
+주 분석과 따로 확인하는 보조 분석이라 `PREREG_seeds5.md` 에 따로 적었다 (결과를 보기 전에 정함).
+주 판정은 계속 seed 0~2 로만 내고, 기존 결과 파일과 `results/figs/` 는 덮어쓰지 않는다.
+
 ### 양자화는 메인에서 제외
 PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 attribution 계산이 막힌다.
 필요하면 fake-quant 로 우회하되, 부록 수준으로만 다룬다. **pruning 이 메인.**
@@ -301,6 +307,13 @@ PyTorch 의 실제 INT8 연산은 autograd 가 붙지 않아 gradient 기반 att
     **공식 배포 tarball 과 바이트 단위로 같지는 않다.** 정기적으로 `ls /data/$USER/datasets/xai` 로 있는지 확인할 것.
     복구 전 잡은 `--exclude=aurora-g2,aurora-g5,aurora-g6` 로 데이터가 남은 노드에만 걸었다.
 
+18. **scp 를 여러 번 빠르게 부르면 SSH 접속이 막힌다** ★2026-11-17 확인
+    파일 120개를 scp 로 하나씩 받다가 `Connection closed` → `kex_exchange_identification: Connection reset` 이 났고
+    약 3분 뒤 풀렸다. 여러 파일은 `sftp -b <get 목록>` 으로 연결 한 번에 받는다.
+
+19. **Windows 콘솔에서 분석 스크립트가 `UnicodeEncodeError` (cp949) 로 멈춘다** ★2026-11-17 확인
+    로컬 PC 에서 돌릴 때 `PYTHONIOENCODING=utf-8` 을 붙인다.
+
 ---
 
 ## 6. 코드 구조
@@ -322,6 +335,7 @@ summarize_pruning.py    STEP 3. sparsity 별 정확도·S 요약표 (numpy 만 �
 analyze_h1.py           STEP 3+. H1 재판정 — ft0/dense 대비 짝지은 two-way bootstrap (numpy/pandas)
 analyze_h2.py           STEP 5. H2a(부분 Spearman 추적)·H2b(변화량 vs seed 잡음) 채점, results/figs (numpy/pandas/scipy/matplotlib)
 analyze_stress.py       STEP 6. stress test ST-A/B/C 를 analyze_h1·h2 함수로 다시 판정 → results/stress_k5.md
+PREREG_seeds5.md        seed 3·4 보조 분석 사전 등록 (결정 14~21). analyze_h1/h2·summarize_pruning 의 --seeds (기본 0 1 2)
 compute_attribution.py  STEP 4. Grad-CAM / IG / RISE 이미지별 Attr_bg, RISE 목록 생성, 가중치 무작위화 sanity.
                         --ig_baseline blur (σ=10px, ST-C)
 scripts/
@@ -342,6 +356,8 @@ scripts/
   attr_slurm.sh         seed 하나의 모델 목록에 attribution 계산 (sbatch)
   attr_sanity_slurm.sh  가중치 무작위화 sanity (sbatch)
   restore_nas_tars.sh   노드 로컬 사본에서 NAS 데이터 tar 다시 만들기 (srun/sbatch)
+  seeds5_chain.sh       seed 하나의 측정·pruning·sanity·attribution 잡 7개를 SLURM 의존성으로 제출 (보조 분석)
+  regress_main_results.sh  기본값(seed 0~2)으로 분석을 다시 돌려 기존 results/*.md·그림과 비교
 results/                요약표 (git 추적)
 data_check/             STEP 0 결과. overlay 이미지만 git 추적
 runs/                   실행 산출물. args.json, log.csv, final_test.json, shortcut_*.json,
